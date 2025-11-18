@@ -342,16 +342,26 @@
 
             <!-- جمع کل -->
             <div class="flex justify-end mt-auto">
-                <div class="w-full md:w-1/2 space-y-4">
-                    <div class="flex justify-between text-slate-500 border-b border-slate-100 pb-2">
-                        <span>جمع کل مواد و خدمات:</span>
+                <div class="w-full md:w-1/2 space-y-2">
+                    <!-- ردیف‌های محاسباتی آپدیت شده -->
+                    <div class="flex justify-between text-slate-500 pb-2">
+                        <span>قیمت پایه (مواد + سربار):</span>
                         <span class="font-mono font-bold text-slate-800" id="print-base">0</span>
                     </div>
-                    <div class="flex justify-between text-slate-500 border-b border-slate-100 pb-2">
-                        <span>سود و هزینه‌های سربار:</span>
-                        <span class="font-mono font-bold text-slate-800" id="print-extra">0</span>
+                    <div class="flex justify-between text-teal-600 pb-2">
+                        <span>سود تولیدکننده:</span>
+                        <span class="font-mono font-bold" id="print-profit">0</span>
                     </div>
-                    <div class="bg-slate-100 p-4 rounded-xl flex justify-between items-center mt-4">
+                    <div class="flex justify-between text-slate-700 border-t border-slate-200 pt-2">
+                        <span class="font-bold">جمع کل (بدون مالیات):</span>
+                        <span class="font-mono font-bold" id="print-subtotal">0</span>
+                    </div>
+                    <div class="flex justify-between text-amber-600 pb-2">
+                        <span>مالیات بر ارزش افزوده (۱۰٪):</span>
+                        <span class="font-mono font-bold" id="print-vat">0</span>
+                    </div>
+                    
+                    <div class="bg-slate-100 p-4 rounded-xl flex justify-between items-center mt-4 border border-slate-200">
                         <span class="text-lg font-bold text-slate-900">مبلغ قابل پرداخت:</span>
                         <div class="text-right">
                             <span class="text-2xl font-black text-teal-700 block" id="print-final">0</span>
@@ -374,7 +384,7 @@
         // 1. تنظیمات APPWRITE
         // ==========================================
         const APPWRITE_CONFIG = {
-            NDPOINT: 'https://cloud.appwrite.io/v1',
+            ENDPOINT: 'https://cloud.appwrite.io/v1',
             PROJECT_ID: '691c9337000c1532f26a',  // <--- شناسه پروژه خود را اینجا قرار دهید
             DB_ID: '691c956400150133e319',      // <--- شناسه دیتابیس خود را اینجا قرار دهید
             COLS: {
@@ -455,14 +465,13 @@
 
             // تلاش برای دریافت داده‌های عمومی (Store)
             try {
-                // فرض بر این است که ستون is_public را اضافه کرده‌اید. اگر نکرده‌اید این بخش خطا می‌دهد ولی برنامه متوقف نمی‌شود.
                 const storeRes = await db.listDocuments(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.FORMS, [
                     Query.equal('is_public', true),
                     Query.limit(50)
                 ]);
                 state.publicFormulas = storeRes.documents;
             } catch (e) { 
-                console.log("Public store query failed (maybe 'is_public' index missing)."); 
+                console.warn("Store query failed. Make sure you have an Index on 'is_public' in Appwrite.", e); 
             }
             
             updateUI();
@@ -818,7 +827,7 @@
                         </div>
                         
                         <div class="flex flex-col items-center justify-center py-2">
-                            <span class="text-slate-400 text-xs uppercase tracking-widest mb-1">قیمت نهایی فروش</span>
+                            <span class="text-slate-400 text-xs uppercase tracking-widest mb-1">قیمت نهایی فروش (بدون مالیات)</span>
                             <span class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-slate-400 font-mono tracking-tight">${formatPrice(calc.final)}</span>
                             <span class="text-sm text-teal-400 mt-1">تومان</span>
                         </div>
@@ -999,10 +1008,21 @@
                         <td class="p-4 text-center text-slate-500">${unit}</td>
                     </tr>`;
             });
+            
+            // محاسبه مالیات بر ارزش افزوده
+            const basePrice = calc.matCost + (calc.sub - calc.matCost); // مواد + سربار + دستمزد
+            const profit = calc.profit;
+            const subTotal = calc.final; // قیمت قبل از مالیات
+            const vat = Math.round(subTotal * 0.10); // ۱۰ درصد مالیات
+            const finalTotal = subTotal + vat;
+
             document.getElementById('print-rows').innerHTML = rows;
-            document.getElementById('print-base').innerText = formatPrice(calc.matCost);
-            document.getElementById('print-extra').innerText = formatPrice(calc.sub - calc.matCost + calc.profit);
-            document.getElementById('print-final').innerText = formatPrice(calc.final);
+            
+            document.getElementById('print-base').innerText = formatPrice(basePrice);
+            document.getElementById('print-profit').innerText = formatPrice(profit);
+            document.getElementById('print-subtotal').innerText = formatPrice(subTotal);
+            document.getElementById('print-vat').innerText = formatPrice(vat);
+            document.getElementById('print-final').innerText = formatPrice(finalTotal);
 
             document.getElementById('print-modal').classList.remove('hidden');
             document.getElementById('print-modal').classList.add('flex');
