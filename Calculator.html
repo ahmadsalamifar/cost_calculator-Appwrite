@@ -80,10 +80,12 @@
 <body class="bg-slate-50">
 
     <!-- صفحه لودینگ -->
-    <div id="loading-screen" class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center text-white">
-        <div class="loader mb-6"></div>
+    <div id="loading-screen" class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center text-white p-4 text-center">
+        <div class="loader mb-6" id="loader-spinner"></div>
         <h2 class="text-2xl font-black mb-2">سیمرغ گستر پویا</h2>
-        <p class="text-slate-400 text-sm" id="loading-text">در حال برقراری ارتباط امن...</p>
+        <div id="loading-message-box" class="max-w-md">
+            <p class="text-slate-400 text-sm" id="loading-text">در حال برقراری ارتباط امن...</p>
+        </div>
     </div>
 
     <!-- محتوای اصلی برنامه -->
@@ -301,7 +303,7 @@
             <div class="flex justify-between items-start border-b-4 border-slate-800 pb-6 mb-8">
                 <div class="text-right">
                     <h1 class="text-3xl font-black text-slate-900">سیمرغ گستر پویا</h1>
-                    <p class="text-slate-600 mt-2 font-medium">طراحی و تولید انواع کانکس و سازه‌های پیش‌ساخته</p>
+                    <p class="text-slate-600 mt-2 font-medium">تولید کننده انواع کانکس و سازه‌های پیش‌ساخته</p>
                 </div>
                 <div class="text-left">
                     <h2 class="text-4xl font-black text-slate-200 tracking-tighter">INVOICE</h2>
@@ -382,6 +384,13 @@
             }
         };
 
+        // --- بررسی وجود کتابخانه Appwrite ---
+        if (typeof Appwrite === 'undefined') {
+            document.getElementById('loading-text').innerText = "خطا: کتابخانه Appwrite بارگذاری نشد. لطفاً اتصال اینترنت یا VPN خود را بررسی کنید.";
+            document.getElementById('loading-text').classList.add('text-red-400');
+            document.getElementById('loader-spinner').style.display = 'none';
+        }
+
         const { Client, Account, Databases, ID, Query, Permission, Role } = Appwrite;
         const client = new Client().setEndpoint(APPWRITE_CONFIG.ENDPOINT).setProject(APPWRITE_CONFIG.PROJECT_ID);
         const account = new Account(client);
@@ -393,6 +402,13 @@
         // 2. شروع برنامه (خودکار و ناشناس)
         // ==========================================
         async function init() {
+            // بررسی تنظیمات اولیه کاربر
+            if (APPWRITE_CONFIG.PROJECT_ID === 'YOUR_PROJECT_ID' || APPWRITE_CONFIG.DB_ID === 'YOUR_DATABASE_ID') {
+                 document.getElementById('loading-text').innerHTML = `<span class="text-amber-400 text-lg">⚠️ تنظیمات انجام نشده است!</span><br>لطفاً فایل را با Notepad باز کنید و شناسه پروژه و دیتابیس Appwrite خود را در بخش APPWRITE_CONFIG وارد کنید.`;
+                 document.getElementById('loader-spinner').style.display = 'none';
+                 return;
+            }
+
             try {
                 // تلاش برای بازیابی سشن قبلی
                 try { await account.get(); } 
@@ -410,8 +426,13 @@
                 document.getElementById('app-content').classList.remove('hidden');
             } catch (err) {
                 console.error(err);
-                document.getElementById('loading-text').innerText = "خطا در اتصال! لطفاً تنظیمات Appwrite را در فایل کد بررسی کنید.";
+                let msg = "خطا در اتصال! لطفاً تنظیمات Appwrite را در فایل کد بررسی کنید.";
+                if (err.message.includes('Network Error') || err.message.includes('Failed to fetch')) {
+                    msg = "خطای شبکه: لطفاً اتصال اینترنت را بررسی کنید. اگر از گیت‌هاب استفاده می‌کنید، مطمئن شوید دامنه را در Appwrite Platform اضافه کرده‌اید.";
+                }
+                document.getElementById('loading-text').innerText = msg;
                 document.getElementById('loading-text').classList.add('text-red-400', 'font-bold');
+                document.getElementById('loader-spinner').style.display = 'none';
             }
         }
 
@@ -784,7 +805,7 @@
                     </div>
 
                     <!-- کارت نهایی قیمت -->
-                    <div class="bg-slate-800 text-white p-6 rounded-2xl shadow-2xl relative overflow-hidden">
+                    <div class="bg-slate-800 text-white p-6 rounded-2xl shadow-xl relative overflow-hidden">
                         <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-500"></div>
                         
                         <div class="flex justify-between text-sm text-slate-400 mb-2">
@@ -861,8 +882,11 @@
             const exist = comps.find(c => c.id === id && c.type === type);
             if(exist) exist.qty += qty; else comps.push({id, type, qty});
 
-            await db.updateDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.FORMS, fid, { components_json: JSON.stringify(comps) });
-            await loadAllData();
+            try {
+                await db.updateDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.FORMS, fid, { components: JSON.stringify(comps) });
+                await loadAllData();
+                renderFormulaDetail(fid);
+            } catch(err) { console.error(err); }
         }
 
         async function removeComp(fid, idx) {
@@ -871,25 +895,28 @@
             comps.splice(idx, 1);
             await db.updateDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.FORMS, fid, { components_json: JSON.stringify(comps) });
             await loadAllData();
+            renderFormulaDetail(fid);
         }
 
         async function updateCost(fid, field, val) {
             const num = parseFloat(val.replace(/,/g, '')) || 0;
             await db.updateDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.FORMS, fid, { [field]: num });
             await loadAllData();
+            renderFormulaDetail(fid);
         }
 
         async function editFormulaName(id) {
             const f = state.formulas.find(x => x.$id === id);
-            const newName = prompt("نام جدید محصول را وارد کنید:", f.name);
-            if(newName && newName !== f.name) {
+            const newName = prompt("نام جدید محصول:");
+            if(newName) {
                 await db.updateDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.FORMS, id, { name: newName });
                 await loadAllData();
+                renderFormulaDetail(id);
             }
         }
 
         async function deleteFormula(id) {
-            if(confirm('آیا مطمئن هستید؟ این عمل غیرقابل بازگشت است.')) {
+            if(confirm('حذف شود؟')) {
                 await db.deleteDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.FORMS, id);
                 state.activeFormulaId = null;
                 document.getElementById('formula-detail-view').classList.add('hidden');
