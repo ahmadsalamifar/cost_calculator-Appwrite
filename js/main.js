@@ -1,4 +1,4 @@
-import { account } from './config.js';
+import { account, state } from './config.js'; // state اضافه شد
 import { fetchAllData } from './api.js';
 import { switchTab, formatInput } from './utils.js';
 import * as Formulas from './formulas.js';
@@ -13,23 +13,37 @@ async function refreshApp() {
 }
 
 function updateUI() {
+    // 1. رفرش لیست سمت راست
     Formulas.renderFormulaList();
-    if (Formulas.selectFormula.activeId) { 
-         // Note: In this pattern, state is managed in config.js and formulas.js, so we just re-render lists
+    
+    // 2. بخش مهم: اگر فرمولی باز است، جزئیاتش (شامل لیست کالاها) را دوباره رندر کن
+    if (state.activeFormulaId) {
+        const f = state.formulas.find(x => x.$id === state.activeFormulaId);
+        if (f) {
+            Formulas.renderFormulaDetail(f);
+        } else {
+            // اگر فرمول حذف شده بود، برگرد به حالت خالی
+            state.activeFormulaId = null;
+            document.getElementById('formula-detail-view').classList.add('hidden');
+            document.getElementById('formula-detail-empty').classList.remove('hidden');
+        }
     }
+    
+    // 3. رفرش بقیه تب‌ها
     Materials.renderMaterials();
     Categories.renderCategories(refreshApp);
     Store.renderStore(refreshApp);
     
+    // 4. آپدیت دراپ‌داون‌ها
     Formulas.updateCompSelect(); 
     
+    // پر کردن دراپ‌داون دسته در فرم کالا
     const matCat = document.getElementById('mat-category');
-    if(matCat && matCat.children.length <= 1) {
-        // Simple refill logic for material categories dropdown
-        import('./config.js').then(m => {
-            const c = m.state.categories.map(x => `<option value="${x.$id}">${x.name}</option>`).join('');
-            matCat.innerHTML = '<option value="">بدون دسته</option>' + c;
-        });
+    if(matCat) {
+        const currentVal = matCat.value;
+        const c = state.categories.map(x => `<option value="${x.$id}">${x.name}</option>`).join('');
+        matCat.innerHTML = '<option value="">بدون دسته</option>' + c;
+        matCat.value = currentVal; // حفظ انتخاب قبلی
     }
 }
 

@@ -56,6 +56,7 @@ export function selectFormula(id) {
     
     const f = state.formulas.find(x => x.$id === id);
     if(f) renderFormulaDetail(f);
+    
     if(window.innerWidth < 1024) document.getElementById('detail-panel').scrollIntoView({behavior: 'smooth'});
 }
 
@@ -67,43 +68,61 @@ export function renderFormulaDetail(f) {
 
     const calc = calculateCost(f);
     document.getElementById('lbl-final-price').innerText = formatPrice(calc.final);
+    
     updateCompSelect();
     
-    const comps = JSON.parse(f.components || '[]');
+    // پارس کردن امن لیست کالاها
+    let comps = [];
+    try {
+        comps = JSON.parse(f.components || '[]');
+    } catch (err) {
+        console.error('JSON Error', err);
+        comps = [];
+    }
+
     const listEl = document.getElementById('formula-comps-list');
     
-    listEl.innerHTML = comps.map((c, idx) => {
-        let name='-', unit='-', price=0, total=0;
-        if(c.type==='mat') {
-            const m = state.materials.find(x=>x.$id===c.id);
-            if(m) { name=m.name; unit=m.unit; price=m.price; } else { name='(حذف شده)'; }
-        } else {
-            const sub = state.formulas.find(x=>x.$id===c.id);
-            if(sub) { name=`🔗 ${sub.name}`; unit='عدد'; price=calculateCost(sub).final; } else { name='(حذف شده)'; }
-        }
-        total = price * c.qty;
-        return `
-        <div class="flex justify-between items-center p-3 text-sm border-b border-slate-50">
-            <div><div class="font-bold text-slate-700 text-xs">${name}</div><div class="text-[10px] text-slate-400 mt-0.5">${c.qty} ${unit} × ${formatPrice(price)}</div></div>
-            <div class="flex items-center gap-2"><span class="font-mono font-bold text-slate-600 text-xs">${formatPrice(total)}</span><button class="text-rose-400 px-2 btn-del-comp" data-idx="${idx}">×</button></div>
-        </div>`;
-    }).join('');
+    if (comps.length === 0) {
+        listEl.innerHTML = '<div class="p-8 text-center text-slate-400 text-xs">هنوز کالایی اضافه نشده است</div>';
+    } else {
+        listEl.innerHTML = comps.map((c, idx) => {
+            let name='-', unit='-', price=0, total=0;
+            if(c.type==='mat') {
+                const m = state.materials.find(x=>x.$id===c.id);
+                if(m) { name=m.name; unit=m.unit; price=m.price; } 
+                else { name='(کالا حذف شده)'; }
+            } else {
+                const sub = state.formulas.find(x=>x.$id===c.id);
+                if(sub) { name=`🔗 ${sub.name}`; unit='عدد'; price=calculateCost(sub).final; } 
+                else { name='(فرمول حذف شده)'; }
+            }
+            total = price * c.qty;
+            return `
+            <div class="flex justify-between items-center p-3 text-sm border-b border-slate-50">
+                <div><div class="font-bold text-slate-700 text-xs">${name}</div><div class="text-[10px] text-slate-400 mt-0.5">${c.qty} ${unit} × ${formatPrice(price)}</div></div>
+                <div class="flex items-center gap-2"><span class="font-mono font-bold text-slate-600 text-xs">${formatPrice(total)}</span><button class="text-rose-400 px-2 btn-del-comp" data-idx="${idx}">×</button></div>
+            </div>`;
+        }).join('');
 
-    listEl.querySelectorAll('.btn-del-comp').forEach(btn => {
-        btn.onclick = () => removeComp(f.$id, parseInt(btn.dataset.idx), () => { 
-             api.get(APPWRITE_CONFIG.COLS.FORMS, f.$id).then(updatedF => {
-                 const index = state.formulas.findIndex(i => i.$id === f.$id);
-                 if(index !== -1) state.formulas[index] = updatedF;
-                 renderFormulaDetail(updatedF);
-             });
+        listEl.querySelectorAll('.btn-del-comp').forEach(btn => {
+            btn.onclick = () => removeComp(f.$id, parseInt(btn.dataset.idx), () => { 
+                // رفرش فوری فقط همین بخش برای سرعت بیشتر
+                 api.get(APPWRITE_CONFIG.COLS.FORMS, f.$id).then(updatedF => {
+                     const index = state.formulas.findIndex(i => i.$id === f.$id);
+                     if(index !== -1) state.formulas[index] = updatedF;
+                     renderFormulaDetail(updatedF);
+                 });
+            });
         });
-    });
+    }
 }
 
 export function calculateCost(f) {
     if(!f) return {matCost:0, sub:0, profit:0, final:0};
     let matCost=0; 
-    const comps = JSON.parse(f.components || '[]');
+    let comps = [];
+    try { comps = JSON.parse(f.components || '[]'); } catch(e){}
+    
     comps.forEach(c => {
         if(c.type==='mat') {
             const m = state.materials.find(x => x.$id === c.id);
@@ -126,23 +145,27 @@ async function addComp(cb) {
 
     const [typePrefix, id] = val.split(':');
     const type = typePrefix === 'MAT' ? 'mat' : 'form';
-    if(type === 'form' && id === state.activeFormulaId) { alert('خطا: لوپ!'); return; }
+    if(type === 'form' && id === state.activeFormulaId) { alert('خطا: نمی‌توانید محصول را در خودش استفاده کنید'); return; }
     
     const f = state.formulas.find(x => x.$id === state.activeFormulaId);
-    let comps = JSON.parse(f.components || '[]');
+    let comps = [];
+    try { comps = JSON.parse(f.components || '[]'); } catch(e){}
+    
     const exist = comps.find(c => c.id === id && c.type === type);
     if(exist) exist.qty += qty; else comps.push({id, type, qty});
     
     try {
         await api.update(APPWRITE_CONFIG.COLS.FORMS, state.activeFormulaId, { components: JSON.stringify(comps) });
         document.getElementById('comp-qty').value = '';
-        cb();
+        cb(); // فراخوانی رفرش اصلی که حالا updateUI را با دقت انجام می‌دهد
     } catch(e) { alert(e.message); }
 }
 
 async function removeComp(fid, idx, localRefresh) {
     const f = state.formulas.find(x => x.$id === fid);
-    let comps = JSON.parse(f.components || '[]');
+    let comps = [];
+    try { comps = JSON.parse(f.components || '[]'); } catch(e){}
+    
     comps.splice(idx, 1);
     try {
         await api.update(APPWRITE_CONFIG.COLS.FORMS, fid, { components: JSON.stringify(comps) });
