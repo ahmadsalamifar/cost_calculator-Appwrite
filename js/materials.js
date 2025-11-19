@@ -3,7 +3,7 @@ import { state, APPWRITE_CONFIG } from './config.js';
 import { formatPrice, parseLocaleNumber, getDateBadge } from './utils.js';
 
 export function setupMaterials(refreshCallback) {
-    // --- کد جدید: عملکرد دکمه راهنما ---
+    // دکمه راهنما
     const guideBtn = document.getElementById('btn-toggle-guide');
     if(guideBtn) {
         guideBtn.onclick = () => {
@@ -11,7 +11,6 @@ export function setupMaterials(refreshCallback) {
             guide.classList.toggle('hidden');
         };
     }
-    // ----------------------------------
 
     document.getElementById('material-form').onsubmit = (e) => { 
         e.preventDefault(); 
@@ -35,6 +34,25 @@ export function setupMaterials(refreshCallback) {
     };
 }
 
+// تابع کمکی برای پر کردن دراپ‌داون واحدها
+function populateUnitSelects() {
+    const options = '<option value="">انتخاب کنید...</option>' + 
+                    state.units.map(u => `<option value="${u.name}">${u.name}</option>`).join('');
+    
+    const pSelect = document.getElementById('mat-purchase-unit');
+    const cSelect = document.getElementById('mat-consumption-unit');
+    
+    // حفظ مقدار فعلی اگر وجود دارد
+    const pVal = pSelect.value;
+    const cVal = cSelect.value;
+
+    pSelect.innerHTML = options;
+    cSelect.innerHTML = options;
+
+    if(pVal) pSelect.value = pVal;
+    if(cVal) cSelect.value = cVal;
+}
+
 async function saveMaterial(cb) {
     const id = document.getElementById('mat-id').value;
     
@@ -42,8 +60,8 @@ async function saveMaterial(cb) {
         name: document.getElementById('mat-name').value,
         display_name: document.getElementById('mat-display-name').value || null,
         category_id: document.getElementById('mat-category').value || null,
-        purchase_unit: document.getElementById('mat-purchase-unit').value,
-        consumption_unit: document.getElementById('mat-consumption-unit').value,
+        purchase_unit: document.getElementById('mat-purchase-unit').value, // اکنون از دراپ‌داون می‌خواند
+        consumption_unit: document.getElementById('mat-consumption-unit').value, // اکنون از دراپ‌داون می‌خواند
         conversion_rate: parseFloat(document.getElementById('mat-conversion-rate').value) || 1,
         price: parseLocaleNumber(document.getElementById('mat-price').value),
         scraper_url: document.getElementById('mat-scraper-url').value || null,
@@ -53,13 +71,15 @@ async function saveMaterial(cb) {
     try {
         if(id) await api.update(APPWRITE_CONFIG.COLS.MATS, id, data);
         else await api.create(APPWRITE_CONFIG.COLS.MATS, data);
-        
         resetMatForm();
         cb();
     } catch(e){ alert(e.message); }
 }
 
 export function renderMaterials(filter='') {
+    // هر بار که لیست رندر می‌شود، دراپ‌داون‌ها را هم آپدیت کن
+    populateUnitSelects();
+
     const sort = document.getElementById('sort-materials').value;
     let list = state.materials.filter(m => m.name.includes(filter) || (m.display_name && m.display_name.includes(filter)));
     
@@ -121,13 +141,15 @@ function editMat(id) {
     document.getElementById('mat-name').value = m.name;
     document.getElementById('mat-display-name').value = m.display_name || '';
     document.getElementById('mat-category').value = m.category_id || '';
+    
+    // اطمینان از پر بودن دراپ‌داون‌ها قبل از ست کردن مقدار
+    populateUnitSelects();
     document.getElementById('mat-purchase-unit').value = m.purchase_unit || '';
     document.getElementById('mat-consumption-unit').value = m.consumption_unit || '';
+    
     document.getElementById('mat-conversion-rate').value = m.conversion_rate || 1;
     document.getElementById('mat-price').value = formatPrice(m.price);
     document.getElementById('mat-scraper-url').value = m.scraper_url || '';
-    
-    // لود کردن مقدار فیلد جدید
     document.getElementById('mat-scraper-factor').value = m.scraper_factor || 1;
     
     const btn = document.getElementById('mat-submit-btn');
@@ -142,11 +164,10 @@ function resetMatForm() {
     document.getElementById('mat-id').value = '';
     document.getElementById('mat-conversion-rate').value = 1;
     document.getElementById('mat-scraper-factor').value = 1;
+    populateUnitSelects(); // ریست کردن دراپ‌داون به حالت انتخاب نشده
     
     const btn = document.getElementById('mat-submit-btn');
     btn.innerText = 'ذخیره کالا';
     document.getElementById('mat-cancel-btn').classList.add('hidden');
-    
-    // بستن راهنما موقع ریست
     document.getElementById('material-guide').classList.add('hidden');
 }
