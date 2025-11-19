@@ -50,25 +50,26 @@ function showScraperReport(report) {
     if(existing) existing.remove();
 
     let content = '';
-    if(report.length === 0) content = '<p class="text-center text-slate-400 py-4">هیچ موردی برای بررسی یافت نشد.</p>';
-
-    report.forEach(item => {
-        let style = { bg: 'bg-slate-50', border: 'border-slate-200', icon: '⚪', text: 'text-slate-600' };
-        
-        if(item.status === 'success') style = { bg: 'bg-emerald-50', border: 'border-emerald-200', icon: '✅', text: 'text-emerald-700' };
-        if(item.status === 'error') style = { bg: 'bg-rose-50', border: 'border-rose-200', icon: '❌', text: 'text-rose-700' };
-        
-        content += `
-        <div class="border rounded-lg p-3 mb-2 ${style.bg} ${style.border} text-sm">
-            <div class="flex justify-between font-bold ${style.text} mb-1">
-                <span>${style.icon} ${item.name}</span>
-                <span class="text-[10px] opacity-70 uppercase border px-1 rounded bg-white">${item.status}</span>
-            </div>
-            <div class="text-xs text-slate-600">${item.msg}</div>
-            ${item.detail ? `<div class="mt-1 pt-1 border-t border-slate-200/50 text-[10px] font-mono text-slate-500 dir-ltr text-left">${item.detail}</div>` : ''}
-            ${item.status === 'success' ? `<div class="flex justify-between mt-1 text-xs font-bold"><span class="text-rose-400 line-through">${item.old}</span> <span>➝</span> <span class="text-emerald-600">${item.new}</span></div>` : ''}
-        </div>`;
-    });
+    if(!report || report.length === 0) content = '<p class="text-center text-slate-400 py-4">هیچ موردی برای بررسی یافت نشد.</p>';
+    else {
+        report.forEach(item => {
+            let style = { bg: 'bg-slate-50', border: 'border-slate-200', icon: '⚪', text: 'text-slate-600' };
+            
+            if(item.status === 'success') style = { bg: 'bg-emerald-50', border: 'border-emerald-200', icon: '✅', text: 'text-emerald-700' };
+            if(item.status === 'error') style = { bg: 'bg-rose-50', border: 'border-rose-200', icon: '❌', text: 'text-rose-700' };
+            
+            content += `
+            <div class="border rounded-lg p-3 mb-2 ${style.bg} ${style.border} text-sm">
+                <div class="flex justify-between font-bold ${style.text} mb-1">
+                    <span>${style.icon} ${item.name}</span>
+                    <span class="text-[10px] opacity-70 uppercase border px-1 rounded bg-white">${item.status}</span>
+                </div>
+                <div class="text-xs text-slate-600">${item.msg}</div>
+                ${item.detail ? `<div class="mt-1 pt-1 border-t border-slate-200/50 text-[10px] font-mono text-slate-500 dir-ltr text-left">${item.detail}</div>` : ''}
+                ${item.status === 'success' ? `<div class="flex justify-between mt-1 text-xs font-bold"><span class="text-rose-400 line-through">${item.old}</span> <span>➝</span> <span class="text-emerald-600">${item.new}</span></div>` : ''}
+            </div>`;
+        });
+    }
 
     const html = `
     <div class="fixed inset-0 bg-slate-900/80 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" id="report-modal">
@@ -88,7 +89,6 @@ function showScraperReport(report) {
 
     document.body.insertAdjacentHTML('beforeend', html);
 }
-
 
 // --- UI مدیریت واحدها ---
 
@@ -133,7 +133,8 @@ function renderRelationsUI() {
         container.appendChild(row);
     });
     
-    document.querySelectorAll('.base-unit-label').forEach(el => el.innerText = baseUnitName);
+    const labelElems = document.querySelectorAll('.base-unit-label');
+    if(labelElems) labelElems.forEach(el => el.innerText = baseUnitName);
 }
 
 function addRelationRow() {
@@ -170,7 +171,9 @@ function updateUnitDropdowns() {
         if(availableUnits.includes(prevScraper)) scraperSelect.value = prevScraper;
     }
     
-    document.querySelectorAll('.base-unit-label').forEach(el => el.innerText = baseUnit);
+    const labelElems = document.querySelectorAll('.base-unit-label');
+    if(labelElems) labelElems.forEach(el => el.innerText = baseUnit);
+    
     calculateScraperFactor();
 }
 
@@ -274,7 +277,8 @@ export function renderMaterials(filter='') {
     el.querySelectorAll('.btn-edit-mat').forEach(b => b.onclick = () => editMat(b.dataset.id));
     el.querySelectorAll('.btn-del-mat').forEach(b => b.onclick = async () => {
         if(confirm('حذف؟')) {
-            try { await api.delete(APPWRITE_CONFIG.COLS.MATS, b.dataset.id); refreshCallback(); } catch(e) { alert(e.message); }
+            try { await api.delete(APPWRITE_CONFIG.COLS.MATS, b.dataset.id); refreshCallback(); }
+            catch(e) { alert(e.message); }
         }
     });
 }
@@ -290,15 +294,14 @@ function editMat(id) {
     
     try {
         const rels = JSON.parse(m.unit_relations || '{}');
+        
         const baseSelect = document.getElementById('mat-base-unit-select');
         if(state.units.length === 0) {
              baseSelect.innerHTML = `<option value="${rels.base || 'Unit'}">${rels.base || 'Unit'}</option>`;
         }
         if(rels.base) baseSelect.value = rels.base;
 
-        currentUnitRelations = (rels.others || []).map(r => ({
-            name: r.name, qtyUnit: r.qtyUnit || 1, qtyBase: r.qtyBase || 1
-        }));
+        currentUnitRelations = rels.others || [];
         renderRelationsUI();
         updateUnitDropdowns();
         
@@ -310,6 +313,7 @@ function editMat(id) {
         calculateScraperFactor(); 
 
     } catch(e) {
+        console.error("Error parsing unit relations", e);
         currentUnitRelations = [];
         renderRelationsUI();
     }
@@ -331,13 +335,8 @@ function resetMatForm() {
     currentUnitRelations = [];
     renderRelationsUI();
     updateUnitDropdowns();
+    
     const btn = document.getElementById('mat-submit-btn');
     if(btn) btn.innerText = 'ذخیره کالا';
     document.getElementById('mat-cancel-btn').classList.add('hidden');
 }
-```
-
-حالا:
-۱. بعد از زدن دکمه **«🤖 بروزرسانی قیمت‌ها»**، یک پنجره باز می‌شود.
-۲. تمام جزئیات (نام کالا، قیمت قدیم، قیمت جدید و روش پیدا کردن) در آن لیست می‌شود.
-۳. می‌توانید ببینید که آیا ربات قیمت را درست پیدا کرده یا نه.
