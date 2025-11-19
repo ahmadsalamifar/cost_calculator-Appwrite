@@ -3,339 +3,278 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ماشین حساب کانکس - شرکت سیمرغ گستر پویا</title>
-    <!-- Tailwind CSS -->
+    <title>سامانه جامع سیمرغ گستر پویا</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Appwrite SDK -->
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
-    <!-- Persian Font (Vazirmatn) -->
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     
     <style>
-        /* --- GLOBAL STYLES --- */
-        body {
-            font-family: 'Vazirmatn', sans-serif;
-            background-color: #f1f5f9; /* Slate-100 */
-            color: #334155; /* Slate-700 */
-            padding-bottom: 80px; /* Space for potential mobile nav */
-        }
-
-        /* --- INPUTS & FORMS --- */
-        .form-label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 700;
-            color: #0f766e; /* Teal-700 */
-            margin-bottom: 0.5rem;
-        }
+        /* تنظیمات فونت و استایل پایه */
+        body { font-family: 'Vazirmatn', sans-serif; @apply bg-slate-50 text-slate-800; padding-bottom: 100px; }
         
-        .input-field {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #cbd5e1;
-            border-radius: 0.75rem;
-            background-color: white;
-            transition: all 0.2s;
-            font-size: 1rem;
+        /* کامپوننت‌های ورودی */
+        .form-label { @apply block text-sm font-bold text-teal-800 mb-2; }
+        .input-field { 
+            @apply w-full p-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white transition-all shadow-sm text-sm; 
         }
-        .input-field:focus {
-            outline: none;
-            border-color: #14b8a6; /* Teal-500 */
-            box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.2);
-        }
+        .input-field:focus { @apply border-teal-500 ring-2 ring-teal-100; }
         
-        /* Number inputs styling */
-        input[type="number"], .price-input {
-            direction: ltr;
-            text-align: left;
-            font-family: monospace;
-            font-weight: 700;
-        }
+        /* اعداد و قیمت‌ها */
+        input[type="number"], .price-input { direction: ltr; text-align: left; font-family: monospace; font-weight: 700; }
 
-        /* --- BUTTONS --- */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.75rem;
-            font-weight: 700;
-            transition: all 0.2s;
-            cursor: pointer;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        /* دکمه‌ها */
+        .btn { 
+            @apply px-5 py-2.5 rounded-xl font-bold transition-all transform active:scale-95 shadow-md flex items-center justify-center gap-2 cursor-pointer select-none; 
         }
-        .btn:active {
-            transform: scale(0.96);
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
-            color: white;
-        }
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #115e59 0%, #0f766e 100%);
-            box-shadow: 0 10px 15px -3px rgba(13, 148, 136, 0.3);
-        }
+        .btn-primary { @apply bg-gradient-to-r from-teal-700 to-cyan-800 text-white hover:from-teal-800 hover:to-cyan-900 shadow-teal-500/20; }
+        .btn-danger { @apply bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100; }
+        .btn-warning { @apply bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100; }
+        .btn-secondary { @apply bg-slate-200 text-slate-700 hover:bg-slate-300; }
 
-        .btn-danger {
-            background-color: #fee2e2;
-            color: #ef4444;
-            border: 1px solid #fecaca;
+        /* کارت‌ها */
+        .card { 
+            @apply bg-white p-6 rounded-2xl shadow-lg border border-slate-100 mb-6 relative overflow-hidden transition-all duration-300 hover:shadow-xl; 
         }
-        .btn-danger:hover {
-            background-color: #fecaca;
-            color: #b91c1c;
-        }
+        .card-header { @apply flex justify-between items-center mb-6 border-b border-slate-100 pb-4; }
 
-        .btn-warning {
-            background-color: #fef3c7;
-            color: #d97706;
-            border: 1px solid #fde68a;
+        /* تب‌ها */
+        .tab-container { @apply flex bg-white p-1 rounded-2xl shadow-sm border border-slate-200 mb-6 mx-4 md:mx-0 overflow-x-auto; }
+        .tab-btn { 
+            @apply flex-1 py-3 px-4 text-center text-slate-500 rounded-xl font-bold transition-all whitespace-nowrap; 
         }
-        .btn-warning:hover {
-            background-color: #fde68a;
-        }
+        .tab-btn.active { @apply bg-teal-50 text-teal-700 shadow-inner; }
 
-        /* --- CARDS & CONTAINERS --- */
-        .card {
-            background: white;
-            border-radius: 1.5rem;
-            padding: 1.5rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
-            border-top: 5px solid #0d9488; /* Teal border top */
-            margin-bottom: 1.5rem;
-        }
-
-        /* --- TABS --- */
-        .tab-container {
-            display: flex;
-            background: white;
-            padding: 0.5rem;
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            margin-bottom: 2rem;
-            overflow-x: auto;
-        }
-        .tab-btn {
-            flex: 1;
-            padding: 0.75rem 1.5rem;
-            text-align: center;
-            border-radius: 0.75rem;
-            font-weight: 700;
-            color: #64748b;
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
-        .tab-btn.active {
-            background-color: #ccfbf1; /* Teal-100 */
-            color: #0f766e; /* Teal-800 */
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-
-        /* --- UPDATED DATE BADGE --- */
+        /* نشانگر تاریخ (آپدیت شده) */
         .update-badge {
-            display: inline-flex;
-            align-items: center;
-            font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 0.5rem;
-            background-color: #fff1f2; /* Rose-50 */
-            color: #be123c; /* Rose-700 */
-            border: 1px solid #fda4af;
-            font-weight: bold;
-            white-space: nowrap;
+            @apply text-[10px] px-2 py-0.5 rounded-full border flex items-center gap-1 whitespace-nowrap;
         }
-        .update-badge svg {
-            width: 12px;
-            height: 12px;
-            margin-left: 4px;
-        }
+        .update-badge.new { @apply bg-green-50 text-green-700 border-green-200; }
+        .update-badge.old { @apply bg-orange-50 text-orange-700 border-orange-200; }
 
-        /* --- PRINT STYLES --- */
-        @media print {
-            body * { visibility: hidden; }
-            #print-section, #print-section * { visibility: visible; }
-            #print-section {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                background: white;
-                padding: 20px;
-            }
-            .no-print { display: none !important; }
-        }
-
-        /* --- ANIMATIONS --- */
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        /* Loading Spinner */
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #0d9488;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
+        /* لودینگ */
+        .loader { 
+            border: 3px solid #f3f3f3; 
+            border-top: 3px solid #0f766e; 
+            border-radius: 50%; 
+            width: 40px; 
+            height: 40px; 
+            animation: spin 1s linear infinite; 
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* مدال (پنجره پاپ‌آپ) */
+        .modal-overlay { @apply fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4; }
+        .modal-content { @apply bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl p-6 animate-[fadeIn_0.2s_ease-out]; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
+        /* حالت پرینت */
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; background: white; padding: 0; margin: 0; }
+            .no-print { display: none !important; }
+        }
     </style>
 </head>
-<body class="p-4 md:p-6">
+<body class="bg-slate-50">
 
-    <!-- LOADING OVERLAY (Initial) -->
-    <div id="loading-screen" class="fixed inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center text-white">
-        <div class="loader"></div>
-        <p class="mt-4 font-bold text-lg">در حال اتصال به سرور...</p>
-        <p id="appwrite-status" class="text-sm text-slate-400 mt-2">لطفاً صبر کنید...</p>
+    <!-- صفحه لودینگ -->
+    <div id="loading-screen" class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center text-white p-4 text-center">
+        <div class="loader mb-6" id="loader-spinner"></div>
+        <h2 class="text-2xl font-black mb-2">سیمرغ گستر پویا</h2>
+        <div id="loading-message-box" class="max-w-md">
+            <p class="text-slate-400 text-sm" id="loading-text">در حال برقراری ارتباط امن...</p>
+        </div>
     </div>
 
-    <div id="app-content" class="max-w-7xl mx-auto hidden fade-in">
+    <!-- محتوای اصلی برنامه -->
+    <div id="app-content" class="max-w-7xl mx-auto p-4 md:p-8 hidden fade-in">
         
-        <!-- HEADER -->
-        <header class="flex flex-col md:flex-row justify-between items-center mb-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <div class="text-center md:text-right">
-                <h1 class="text-3xl font-extrabold text-slate-800 mb-1">
-                    شرکت <span class="text-teal-600">سیمرغ گستر پویا</span>
+        <!-- هدر سایت -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
+            <div class="text-center md:text-right mb-4 md:mb-0">
+                <h1 class="text-3xl font-black text-slate-800 tracking-tight">
+                    ماشین حساب <span class="text-teal-600">سیمرغ</span>
                 </h1>
-                <p class="text-slate-500 font-medium">سامانه هوشمند محاسبه قیمت تمام شده کانکس</p>
+                <p class="text-slate-500 text-sm mt-1">سیستم مدیریت قیمت تمام شده کانکس و سازه‌های پیش‌ساخته</p>
             </div>
-            <div class="mt-4 md:mt-0 flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg border border-green-100">
-                <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <span class="text-sm text-green-700 font-bold">اتصال برقرار است</span>
+            <div class="flex items-center gap-3">
+                <div class="text-right hidden md:block px-4 border-l border-slate-200">
+                    <p class="text-[10px] text-slate-400 uppercase">وضعیت کاربر</p>
+                    <p class="text-sm font-bold text-emerald-600 flex items-center gap-1">
+                        <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> متصل
+                    </p>
+                </div>
+                <!-- دکمه فروشگاه داده -->
+                <button onclick="switchTab('store')" class="btn bg-purple-50 text-purple-700 border border-purple-100 hover:bg-purple-100">
+                    <span class="text-lg">🏦</span> بانک داده (فروشگاه)
+                </button>
             </div>
         </header>
 
-        <!-- TABS -->
+        <!-- تب‌های اصلی -->
         <div class="tab-container">
             <button onclick="switchTab('formulas')" class="tab-btn active" id="btn-formulas">📋 مدیریت فرمول‌ها</button>
-            <button onclick="switchTab('materials')" class="tab-btn" id="btn-materials">📦 انبار مواد اولیه</button>
+            <button onclick="switchTab('materials')" class="tab-btn" id="btn-materials">📦 انبار و قیمت‌ها</button>
             <button onclick="switchTab('categories')" class="tab-btn" id="btn-categories">📂 دسته‌بندی‌ها</button>
         </div>
 
         <!-- =========================================
-             TAB 1: CATEGORIES (دسته‌بندی‌ها)
+             تب ۱: دسته‌بندی‌ها (Categories)
              ========================================= -->
         <div id="tab-categories" class="hidden">
-            <div class="card max-w-xl mx-auto">
-                <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center">
-                    <span class="w-1 h-6 bg-teal-500 rounded ml-2"></span>
-                    مدیریت دسته‌بندی‌ها
-                </h2>
-                <p class="text-sm text-slate-500 mb-4">برای نظم دادن به مواد اولیه، ابتدا دسته‌ها را تعریف کنید (مثلاً: آهن‌آلات، چوب، برق...).</p>
+            <div class="card max-w-xl mx-auto border-t-4 border-teal-500">
+                <div class="card-header">
+                    <h2 class="text-xl font-bold text-slate-800">مدیریت گروه‌های کالا</h2>
+                </div>
                 
                 <form onsubmit="handleAddCategory(event)" class="flex gap-2 mb-6">
-                    <input type="text" id="cat-name" class="input-field" placeholder="نام دسته‌بندی جدید..." required>
+                    <input type="text" id="cat-name" class="input-field" placeholder="نام گروه جدید (مثلاً: پروفیل، عایق...)" required>
                     <button type="submit" class="btn btn-primary px-6">افزودن</button>
                 </form>
 
-                <div id="category-list" class="space-y-2 max-h-96 overflow-y-auto pr-2">
-                    <!-- Categories render here -->
+                <div class="bg-slate-50 rounded-xl p-2 border border-slate-200 max-h-80 overflow-y-auto custom-scrollbar" id="category-list">
+                    <!-- لیست دسته‌ها اینجا قرار می‌گیرد -->
+                    <p class="text-center text-slate-400 py-4">در حال بارگذاری...</p>
                 </div>
             </div>
         </div>
 
         <!-- =========================================
-             TAB 2: MATERIALS (مواد اولیه)
+             تب ۲: مواد اولیه (Materials)
              ========================================= -->
         <div id="tab-materials" class="hidden">
-            <!-- Add Material Form -->
-            <div class="card">
-                <h2 class="text-xl font-bold text-slate-800 mb-6 flex items-center">
-                    <span class="w-1 h-6 bg-teal-500 rounded ml-2"></span>
-                    افزودن / ویرایش کالا
-                </h2>
-                <form onsubmit="handleSaveMaterial(event)" id="material-form">
-                    <input type="hidden" id="mat-id">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                        <div>
-                            <label class="form-label">دسته‌بندی</label>
-                            <select id="mat-category" class="input-field">
-                                <option value="">-- انتخاب کنید --</option>
-                            </select>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- ستون راست: فرم افزودن -->
+                <div class="lg:col-span-4">
+                    <div class="card sticky top-4 border-t-4 border-teal-500">
+                        <div class="card-header">
+                            <h2 class="text-lg font-bold text-slate-800">ثبت / ویرایش کالا</h2>
                         </div>
-                        <div class="col-span-1 md:col-span-1">
-                            <label class="form-label">نام کالا</label>
-                            <input type="text" id="mat-name" class="input-field" placeholder="مثال: پروفیل ۴۰*۴۰" required>
-                        </div>
-                        <div>
-                            <label class="form-label">واحد شمارش</label>
-                            <input type="text" id="mat-unit" class="input-field" placeholder="شاخه، کیلو، متر..." required>
-                        </div>
-                        <div>
-                            <label class="form-label">قیمت واحد (تومان)</label>
-                            <input type="text" id="mat-price" class="input-field price-input" placeholder="0" oninput="formatInput(this)" required>
-                        </div>
-                    </div>
-                    <div class="flex gap-3 mt-6">
-                        <button type="submit" class="btn btn-primary flex-1" id="mat-submit-btn">ذخیره کالا در انبار</button>
-                        <button type="button" onclick="resetMaterialForm()" class="btn btn-danger hidden" id="mat-cancel-btn">لغو ویرایش</button>
-                    </div>
-                </form>
-            </div>
+                        <form onsubmit="handleSaveMaterial(event)" id="material-form" class="space-y-4">
+                            <input type="hidden" id="mat-id">
+                            
+                            <div>
+                                <label class="form-label">دسته‌بندی</label>
+                                <select id="mat-category" class="input-field bg-slate-50">
+                                    <option value="">-- انتخاب کنید --</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="form-label">نام کالا</label>
+                                <input type="text" id="mat-name" class="input-field" placeholder="مثال: پروفیل ۴۰×۴۰ سنگین" required>
+                            </div>
 
-            <!-- Materials List -->
-            <div class="card">
-                <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                    <h3 class="text-lg font-bold text-slate-700">موجودی انبار و قیمت‌ها</h3>
-                    <div class="flex gap-4">
-                        <div class="relative w-full sm:w-52">
-                            <input type="text" placeholder="جستجو در نام کالا..." oninput="renderMaterials(this.value)" class="input-field text-sm pl-10">
-                            <span class="absolute left-3 top-3 text-slate-400">🔍</span>
-                        </div>
-                        <select id="sort-materials" onchange="renderMaterials()" class="input-field w-full sm:w-40 text-sm">
-                            <option value="name_asc">مرتب سازی: نام (الفبا)</option>
-                            <option value="name_desc">مرتب سازی: نام (معکوس)</option>
-                            <option value="price_asc">مرتب سازی: قیمت (کمترین)</option>
-                            <option value="price_desc">مرتب سازی: قیمت (بیشترین)</option>
-                            <option value="category">مرتب سازی: دسته‌بندی</option>
-                        </select>
+                            <div class="flex gap-3">
+                                <div class="w-1/3">
+                                    <label class="form-label">واحد</label>
+                                    <input type="text" id="mat-unit" class="input-field text-center" placeholder="شاخه" required>
+                                </div>
+                                <div class="w-2/3">
+                                    <label class="form-label">قیمت (تومان)</label>
+                                    <input type="text" id="mat-price" class="input-field price-input text-teal-700" placeholder="0" oninput="formatInput(this)" required>
+                                </div>
+                            </div>
+
+                            <div class="pt-4 flex gap-2">
+                                <button type="submit" class="btn btn-primary w-full" id="mat-submit-btn">ذخیره در انبار</button>
+                                <button type="button" onclick="resetMaterialForm()" id="mat-cancel-btn" class="btn btn-danger hidden">لغو</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
-                
-                <div id="materials-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <!-- Materials render here -->
+
+                <!-- ستون چپ: لیست موجودی -->
+                <div class="lg:col-span-8">
+                    <div class="card min-h-[600px]">
+                        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                            <h2 class="text-xl font-bold text-slate-800">موجودی انبار</h2>
+                            
+                            <div class="flex gap-2 w-full md:w-auto">
+                                <div class="relative flex-grow md:w-64">
+                                    <input type="text" placeholder="جستجو..." oninput="renderMaterials(this.value)" class="input-field pl-10">
+                                    <span class="absolute left-3 top-3.5 text-slate-400">🔍</span>
+                                </div>
+                                <select id="sort-materials" onchange="renderMaterials()" class="input-field w-auto text-sm">
+                                    <option value="name_asc">الفبا (صعودی)</option>
+                                    <option value="date_desc">جدیدترین قیمت</option>
+                                    <option value="price_desc">گران‌ترین</option>
+                                    <option value="price_asc">ارزان‌ترین</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="materials-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto pr-2">
+                            <!-- کارت‌های کالا اینجا رندر می‌شوند -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- =========================================
-             TAB 3: FORMULAS (فرمول‌ها)
+             تب ۳: فرمول‌ها (Formulas) - مستر/دیتیل
              ========================================= -->
-        <div id="tab-formulas">
-            <!-- Create Formula -->
-            <div class="card mb-6">
-                <h2 class="text-xl font-bold text-slate-800 mb-4">تعریف محصول جدید (فرمول)</h2>
-                <form onsubmit="handleCreateFormula(event)" class="flex gap-3">
-                    <input type="text" id="new-formula-name" class="input-field" placeholder="نام محصول نهایی (مثلاً: کانکس نگهبانی ۲*۲ با عایق پشم سنگ)" required>
-                    <button type="submit" class="btn btn-primary px-8 whitespace-nowrap">ایجاد فرمول</button>
-                </form>
+        <div id="tab-formulas" class="hidden">
+            <!-- دکمه ایجاد فرمول جدید -->
+            <div class="card mb-6 flex flex-col md:flex-row gap-4 items-center justify-between bg-gradient-to-r from-slate-800 to-slate-700 text-white border-none">
+                <div>
+                    <h2 class="text-xl font-bold">محصولات و فرمول‌ها</h2>
+                    <p class="text-slate-300 text-sm mt-1">مدیریت ساختار و آنالیز قیمت تمام شده</p>
+                </div>
+                <button onclick="document.getElementById('new-formula-modal').classList.remove('hidden'); document.getElementById('new-formula-modal').classList.add('flex');" class="btn bg-white text-slate-900 hover:bg-teal-50 border-none shadow-lg">
+                    + تعریف محصول جدید
+                </button>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                <!-- Master List (Sidebar) -->
-                <div class="lg:col-span-4 bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden h-[600px] flex flex-col">
-                    <div class="p-4 bg-slate-50 border-b">
-                        <input type="text" placeholder="جستجو در فرمول‌ها..." oninput="renderFormulaList(this.value)" class="input-field text-sm bg-white">
+                
+                <!-- لیست فرمول‌ها (سایدبار) -->
+                <div class="lg:col-span-4 card p-0 overflow-hidden h-[700px] flex flex-col border-t-4 border-slate-600">
+                    <div class="p-4 bg-slate-50 border-b border-slate-200">
+                        <input type="text" placeholder="جستجو در محصولات..." oninput="renderFormulaList(this.value)" class="input-field bg-white text-sm">
                     </div>
-                    <div id="formula-master-list" class="flex-1 overflow-y-auto p-2 space-y-2">
-                        <!-- Formula List Items -->
+                    <div id="formula-master-list" class="flex-1 overflow-y-auto p-2 space-y-2 bg-slate-100/50">
+                        <!-- لیست سمت راست -->
                     </div>
                 </div>
 
-                <!-- Detail View (Main) -->
+                <!-- جزئیات فرمول (بخش اصلی) -->
                 <div class="lg:col-span-8">
-                    <div id="formula-detail-empty" class="bg-white rounded-2xl shadow-lg p-16 text-center border-2 border-dashed border-slate-300">
-                        <div class="text-6xl mb-4">📋</div>
-                        <p class="text-xl font-bold text-slate-600">هنوز فرمولی انتخاب نشده است</p>
-                        <p class="text-slate-400 mt-2">لطفاً از لیست سمت راست، یک محصول را انتخاب کنید یا محصول جدیدی بسازید.</p>
+                    <div id="formula-detail-empty" class="bg-white rounded-3xl shadow-sm border-2 border-dashed border-slate-300 h-[500px] flex flex-col items-center justify-center text-center p-8">
+                        <span class="text-6xl mb-4 opacity-20">📋</span>
+                        <h3 class="text-xl font-bold text-slate-500">هنوز محصولی انتخاب نشده است</h3>
+                        <p class="text-slate-400 mt-2 max-w-xs">لطفاً از لیست سمت راست یک محصول را انتخاب کنید یا محصول جدیدی بسازید.</p>
                     </div>
 
                     <div id="formula-detail-view" class="hidden space-y-6">
-                        <!-- Detail Card injected by JS -->
+                        <!-- جزئیات محصول انتخاب شده -->
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =========================================
+             تب ۴: بانک داده (Store) - برای فروش داده
+             ========================================= -->
+        <div id="tab-store" class="hidden">
+            <div class="bg-gradient-to-br from-purple-700 to-indigo-800 rounded-3xl p-8 text-white shadow-xl mb-8 relative overflow-hidden">
+                <div class="relative z-10">
+                    <h2 class="text-3xl font-black mb-2">بانک داده آماده سیمرغ</h2>
+                    <p class="text-indigo-200 max-w-xl text-lg">دسترسی به فرمول‌ها و استانداردهای آماده صنعت کانکس. با یک کلیک، دانش فنی را به پنل خود اضافه کنید.</p>
+                </div>
+                <div class="absolute right-0 top-0 h-full w-1/3 bg-white/5 skew-x-12 transform origin-bottom-right"></div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="store-container">
+                <!-- قالب‌های آماده اینجا لود می‌شوند -->
+                <div class="col-span-full text-center py-12">
+                    <div class="loader mx-auto mb-4 border-purple-200 border-t-purple-600"></div>
+                    <p class="text-slate-500">در حال دریافت لیست قالب‌های آماده...</p>
                 </div>
             </div>
         </div>
@@ -343,150 +282,168 @@
     </div>
 
     <!-- =========================================
-         PRINT MODAL (پیش‌فاکتور)
+         MODALS (پنجره‌های پاپ‌آپ)
          ========================================= -->
-    <div id="print-modal" class="modal-overlay" onclick="if(event.target === this) closeModal('print-modal')">
-        <div class="modal-box" id="print-section">
-            <!-- Print Header -->
-            <div class="flex justify-between items-start border-b-2 border-slate-800 pb-6 mb-6">
+
+    <!-- مودال فرمول جدید -->
+    <div id="new-formula-modal" class="modal-overlay">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">تعریف محصول جدید</h3>
+            <input type="text" id="new-formula-name" class="input-field mb-6" placeholder="مثال: کانکس ۱۲ متری اداری..." autofocus>
+            <div class="flex gap-3">
+                <button onclick="handleCreateFormula()" class="btn btn-primary flex-1">ایجاد</button>
+                <button onclick="document.getElementById('new-formula-modal').classList.remove('flex'); document.getElementById('new-formula-modal').classList.add('hidden');" class="btn btn-secondary flex-1">لغو</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال پرینت (پیش‌فاکتور) -->
+    <div id="print-modal" class="modal-overlay" onclick="if(event.target===this) closeModal('print-modal')">
+        <div class="modal-content" id="print-area">
+            <!-- سربرگ پرینت -->
+            <div class="flex justify-between items-start border-b-4 border-slate-800 pb-6 mb-8">
                 <div class="text-right">
-                    <h2 class="text-2xl font-black text-slate-800">شرکت سیمرغ گستر پویا</h2>
-                    <p class="text-slate-600 mt-1 text-sm">تولید کننده انواع کانکس و سازه‌های پیش‌ساخته</p>
+                    <h1 class="text-3xl font-black text-slate-900">سیمرغ گستر پویا</h1>
+                    <p class="text-slate-600 mt-2 font-medium">تولید کننده انواع کانکس و سازه‌های پیش‌ساخته</p>
                 </div>
                 <div class="text-left">
-                    <h1 class="text-3xl font-black text-teal-700">پیش‌فاکتور فروش</h1>
-                    <p class="text-slate-500 mt-1" id="print-date">تاریخ: --/--/--</p>
+                    <h2 class="text-4xl font-black text-slate-200 tracking-tighter">INVOICE</h2>
+                    <p class="text-xl font-bold text-teal-700 mt-1">پیش‌فاکتور فروش</p>
+                    <p class="text-slate-500 mt-2 font-mono text-sm" dir="ltr" id="print-date">---</p>
                 </div>
             </div>
-            
-            <div class="mb-8 bg-slate-50 p-4 rounded-lg border border-slate-200">
-                <h3 class="font-bold text-slate-700 mb-2">مشخصات محصول:</h3>
-                <p class="text-xl font-bold text-slate-900" id="print-title">---</p>
+
+            <!-- مشخصات خریدار/محصول -->
+            <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 mb-8">
+                <div class="grid grid-cols-2 gap-8">
+                    <div>
+                        <span class="text-slate-400 text-xs uppercase font-bold tracking-wider block mb-1">شرح محصول</span>
+                        <span class="text-xl font-bold text-slate-800 leading-relaxed" id="print-title">---</span>
+                    </div>
+                    <div class="text-left">
+                        <span class="text-slate-400 text-xs uppercase font-bold tracking-wider block mb-1">شناسه سند</span>
+                        <span class="text-sm font-mono text-slate-600 bg-white px-2 py-1 rounded border" id="print-id">---</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- Table -->
+            <!-- جدول اقلام -->
             <table class="w-full mb-8 border-collapse">
                 <thead>
-                    <tr class="bg-slate-800 text-white">
-                        <th class="text-right p-3 rounded-r-lg">شرح کالا / خدمات</th>
-                        <th class="text-center p-3 w-24">مقدار</th>
-                        <th class="text-center p-3 w-24 rounded-l-lg">واحد</th>
+                    <tr class="bg-slate-800 text-white text-sm">
+                        <th class="text-right p-4 rounded-r-xl w-1/2">شرح کالا / خدمات</th>
+                        <th class="text-center p-4 w-24">تعداد</th>
+                        <th class="text-center p-4 w-24 rounded-l-xl">واحد</th>
                     </tr>
                 </thead>
-                <tbody id="print-rows" class="text-sm">
-                    <!-- Rows generated by JS -->
+                <tbody id="print-rows" class="text-sm font-medium text-slate-700">
+                    <!-- ردیف‌ها -->
                 </tbody>
             </table>
 
-            <!-- Totals -->
-            <div class="flex justify-end">
-                <div class="w-full md:w-1/2 bg-slate-50 p-6 rounded-xl border border-slate-200">
-                    <div class="flex justify-between mb-3 text-slate-600">
-                        <span>جمع کل مواد و هزینه‌ها:</span>
-                        <span class="font-mono font-bold text-slate-800" id="print-total">0</span>
+            <!-- جمع کل -->
+            <div class="flex justify-end mt-auto">
+                <div class="w-full md:w-1/2 space-y-4">
+                    <div class="flex justify-between text-slate-500 border-b border-slate-100 pb-2">
+                        <span>جمع کل مواد و خدمات:</span>
+                        <span class="font-mono font-bold text-slate-800" id="print-base">0</span>
                     </div>
-                    <div class="flex justify-between mb-4 text-slate-500 text-sm pb-4 border-b border-slate-300">
-                        <span>مالیات بر ارزش افزوده (۱۰٪):</span>
-                        <span class="font-mono" id="print-tax">0</span>
+                    <div class="flex justify-between text-slate-500 border-b border-slate-100 pb-2">
+                        <span>سود و هزینه‌های سربار:</span>
+                        <span class="font-mono font-bold text-slate-800" id="print-extra">0</span>
                     </div>
-                    <div class="flex justify-between items-center">
+                    <div class="bg-slate-100 p-4 rounded-xl flex justify-between items-center mt-4">
                         <span class="text-lg font-bold text-slate-900">مبلغ قابل پرداخت:</span>
-                        <span class="text-2xl font-black text-teal-700" id="print-final">0 <span class="text-sm font-normal text-slate-500">تومان</span></span>
+                        <div class="text-right">
+                            <span class="text-2xl font-black text-teal-700 block" id="print-final">0</span>
+                            <span class="text-xs text-slate-400">تومان</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Print Footer (No Print) -->
-            <div class="mt-8 text-center no-print border-t pt-6">
-                <button onclick="window.print()" class="btn btn-primary px-8 py-3 text-lg shadow-lg gap-2">
-                    چاپ / ذخیره PDF
-                </button>
-                <button onclick="closeModal('print-modal')" class="btn btn-danger px-6 py-3 mr-2">بستن</button>
+            <!-- فوتر پرینت (فقط در صفحه نمایش) -->
+            <div class="mt-12 text-center no-print border-t border-slate-100 pt-6 flex justify-center gap-4">
+                <button onclick="window.print()" class="btn btn-primary px-8 text-lg shadow-xl">چاپ / دانلود PDF</button>
+                <button onclick="closeModal('print-modal')" class="btn btn-secondary px-6">بستن</button>
             </div>
         </div>
     </div>
 
     <script>
-        // ------------------------------------------------------------------
-        // 1. CONFIGURATION & SETUP
-        // ------------------------------------------------------------------
+        // ==========================================
+        // 1. تنظیمات APPWRITE
+        // ==========================================
         const APPWRITE_CONFIG = {
-            NDPOINT: 'https://cloud.appwrite.io/v1',
-            PROJECT_ID: '691c9337000c1532f26a',  // <--- شناسه پروژه خود را اینجا قرار دهید
-            DB_ID: '691c956400150133e319',      // <--- شناسه دیتابیس خود را اینجا قرار دهید
+            ENDPOINT: 'https://cloud.appwrite.io/v1',
+            PROJECT_ID: '691c9337000c1532f26a',  // << شناسه پروژه خود را اینجا بگذارید
+            DB_ID: '691c956400150133e319',      // << شناسه دیتابیس را اینجا بگذارید
             COLS: {
-                CATS: 'categories',
-                MATS: 'materials',
-                FORMS: 'formulas'
+                CATS: 'categories', // << کد کالکشن categories
+                MATS: 'materials',  // << کد کالکشن materials
+                FORMS: 'formulas'   // << کد کالکشن formulas
             }
+        };
 
-        const { Client, Account, Databases, ID, Query } = Appwrite;
+        // --- بررسی وجود کتابخانه Appwrite ---
+        if (typeof Appwrite === 'undefined') {
+            document.getElementById('loading-text').innerText = "خطا: کتابخانه Appwrite بارگذاری نشد. لطفاً اتصال اینترنت یا VPN خود را بررسی کنید.";
+            document.getElementById('loading-text').classList.add('text-red-400');
+            document.getElementById('loader-spinner').style.display = 'none';
+        }
+
+        const { Client, Account, Databases, ID, Query, Permission, Role } = Appwrite;
         const client = new Client().setEndpoint(APPWRITE_CONFIG.ENDPOINT).setProject(APPWRITE_CONFIG.PROJECT_ID);
         const account = new Account(client);
         const db = new Databases(client);
 
-        // Global State
-        let state = {
-            categories: [],
-            materials: [],
-            formulas: [],
-            activeFormulaId: null,
-            materialFilter: '',
-            materialSort: 'name_asc',
-            componentFilter: ''
-        };
+        let state = { categories: [], materials: [], formulas: [], activeFormulaId: null, publicFormulas: [] };
 
-        // ------------------------------------------------------------------
-        // 2. INITIALIZATION (Anonymous Access)
-        // ------------------------------------------------------------------
+        // ==========================================
+        // 2. شروع برنامه (خودکار و ناشناس)
+        // ==========================================
         async function init() {
-            document.getElementById('appwrite-status').textContent = 'در حال اتصال و احراز هویت ناشناس...';
+            // بررسی تنظیمات اولیه کاربر
+            if (APPWRITE_CONFIG.PROJECT_ID === 'YOUR_PROJECT_ID' || APPWRITE_CONFIG.DB_ID === 'YOUR_DATABASE_ID') {
+                 document.getElementById('loading-text').innerHTML = `<span class="text-amber-400 text-lg">⚠️ تنظیمات انجام نشده است!</span><br>لطفاً فایل را با Notepad باز کنید و شناسه پروژه و دیتابیس Appwrite خود را در بخش APPWRITE_CONFIG وارد کنید.`;
+                 document.getElementById('loader-spinner').style.display = 'none';
+                 return;
+            }
+
             try {
-                // Check if user is logged in (even anonymously)
-                try {
-                    await account.get();
-                } catch (e) {
-                    // If not, create an anonymous session
-                    await account.createAnonymousSession();
+                // تلاش برای بازیابی سشن قبلی
+                try { await account.get(); } 
+                catch { 
+                    // اگر سشن نبود، یک سشن ناشناس بساز
+                    console.log("Creating anonymous session...");
+                    await account.createAnonymousSession(); 
                 }
                 
+                // بارگذاری داده‌ها
                 await loadAllData();
                 
+                // مخفی کردن لودینگ
                 document.getElementById('loading-screen').classList.add('hidden');
                 document.getElementById('app-content').classList.remove('hidden');
-                
             } catch (err) {
-                console.error("Init Error:", err);
-                document.getElementById('loading-screen').innerHTML = `
-                    <div class="text-red-400 text-center p-8">
-                        <div class="text-2xl font-bold">خطا در اتصال به سرور Appwrite</div>
-                        <p class="mt-4 text-sm">لطفاً مطمئن شوید شناسه‌های پروژه و دیتابیس در کد HTML (APPWRITE_CONFIG) صحیح وارد شده و دسترسی‌های (Permissions) لازم در Appwrite فعال باشد (Role: Any).</p>
-                    </div>
-                `;
+                console.error(err);
+                let msg = "خطا در اتصال! لطفاً تنظیمات Appwrite را در فایل کد بررسی کنید.";
+                if (err.message.includes('Network Error') || err.message.includes('Failed to fetch')) {
+                    msg = "خطای شبکه: لطفاً اتصال اینترنت را بررسی کنید. اگر از گیت‌هاب استفاده می‌کنید، مطمئن شوید دامنه را در Appwrite Platform اضافه کرده‌اید.";
+                }
+                document.getElementById('loading-text').innerText = msg;
+                document.getElementById('loading-text').classList.add('text-red-400', 'font-bold');
+                document.getElementById('loader-spinner').style.display = 'none';
             }
         }
 
-        // ------------------------------------------------------------------
-        // 3. DATA LOADING & UTILS
-        // ------------------------------------------------------------------
-        
-        // Format Date Helper (Fa-IR)
-        function formatDate(isoString) {
-            if (!isoString) return '';
-            const date = new Date(isoString);
-            return new Intl.DateTimeFormat('fa-IR', {
-                year: 'numeric', month: '2-digit', day: '2-digit',
-                hour: '2-digit', minute: '2-digit'
-            }).format(date);
-        }
-
-        // Format Price Helper
-        function formatPrice(num) {
-            return Number(num).toLocaleString('en-US');
-        }
-
+        // ==========================================
+        // 3. مدیریت داده‌ها
+        // ==========================================
         async function loadAllData() {
-             document.getElementById('appwrite-status').textContent = 'در حال دریافت اطلاعات...';
+            document.getElementById('loading-text').innerText = 'در حال دریافت آخرین قیمت‌ها...';
+            
+            // دریافت همزمان همه داده‌ها
             const [cRes, mRes, fRes] = await Promise.all([
                 db.listDocuments(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.CATS, [Query.limit(100)]),
                 db.listDocuments(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.MATS, [Query.limit(5000)]),
@@ -495,83 +452,96 @@
 
             state.categories = cRes.documents;
             state.materials = mRes.documents;
-            state.formulas = fRes.documents;
+            state.formulas = fRes.documents.sort((a, b) => new Date(b.$updatedAt) - new Date(a.$updatedAt));
 
+            // تلاش برای دریافت داده‌های عمومی (Store)
+            try {
+                // فرض بر این است که ستون is_public را اضافه کرده‌اید. اگر نکرده‌اید این بخش خطا می‌دهد ولی برنامه متوقف نمی‌شود.
+                const storeRes = await db.listDocuments(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.FORMS, [
+                    Query.equal('is_public', true),
+                    Query.limit(50)
+                ]);
+                state.publicFormulas = storeRes.documents;
+            } catch (e) { 
+                console.log("Public store query failed (maybe 'is_public' index missing)."); 
+            }
+            
             updateUI();
         }
 
         function updateUI() {
-            // Re-sort materials based on current state
-            sortMaterials(state.materials, state.materialSort);
+            // مرتب‌سازی کالاها
+            const sortKey = document.getElementById('sort-materials')?.value || 'name_asc';
+            sortMaterials(state.materials, sortKey);
 
             renderCategories();
             renderMaterials();
-            updateDropdowns();
             renderFormulaList();
+            updateDropdowns();
+            renderStore();
+            
+            // اگر فرمولی باز است، آن را رفرش کن
             if (state.activeFormulaId) renderFormulaDetail(state.activeFormulaId);
         }
 
-        // ------------------------------------------------------------------
-        // 4. CATEGORIES LOGIC
-        // ------------------------------------------------------------------
+        // فرمت تاریخ شمسی
+        function formatDate(isoString) {
+            if (!isoString) return '';
+            return new Date(isoString).toLocaleString('fa-IR', {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit'
+            });
+        }
+
+        // فرمت قیمت (۳ رقم ۳ رقم)
+        function formatPrice(num) {
+            return Number(num).toLocaleString('en-US');
+        }
+
+        // ==========================================
+        // 4. دسته‌بندی‌ها
+        // ==========================================
         async function handleAddCategory(e) {
             e.preventDefault();
             const nameInput = document.getElementById('cat-name');
             const name = nameInput.value.trim();
+            if (!name) return;
             
-            if (state.categories.some(c => c.name === name)) return alert('این دسته‌بندی قبلاً وجود دارد.');
-
             try {
-                const res = await db.createDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.CATS, ID.unique(), { name });
-                state.categories.push(res);
-                updateUI();
+                await db.createDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.CATS, ID.unique(), { name });
                 nameInput.value = '';
-            } catch (err) { console.error(err); }
+                await loadAllData();
+            } catch (err) { alert(err.message); }
         }
 
         async function deleteCategory(id) {
-            if(!confirm('آیا مطمئن هستید؟ با حذف دسته، کالاها بدون دسته‌بندی می‌شوند.')) return;
+            if(!confirm('حذف شود؟')) return;
             try {
                 await db.deleteDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.CATS, id);
-                state.categories = state.categories.filter(c => c.$id !== id);
-                updateUI();
-            } catch(err) { console.error(err); }
+                await loadAllData();
+            } catch (err) { alert(err.message); }
         }
 
         function renderCategories() {
             document.getElementById('category-list').innerHTML = state.categories.map(c => `
-                <div class="flex justify-between bg-slate-50 p-3 rounded-lg border border-slate-200 items-center hover:bg-white transition-colors">
+                <div class="flex justify-between bg-slate-100 p-3 rounded-lg mb-2 border border-slate-200 items-center">
                     <span class="font-bold text-slate-700">${c.name}</span>
                     <button onclick="deleteCategory('${c.$id}')" class="text-rose-500 hover:bg-rose-100 p-2 rounded-full transition-colors">🗑</button>
                 </div>
             `).join('');
         }
 
-        // ------------------------------------------------------------------
-        // 5. MATERIALS LOGIC
-        // ------------------------------------------------------------------
-        
-        // Sorting function
-        function sortMaterials(materialArray, sortKey) {
-            const getCatName = (m) => state.categories.find(c => c.$id === m.category_id)?.name || 'سایر';
-            
-            switch (sortKey) {
-                case 'name_asc':
-                    materialArray.sort((a, b) => a.name.localeCompare(b.name));
-                    break;
-                case 'name_desc':
-                    materialArray.sort((a, b) => b.name.localeCompare(a.name));
-                    break;
-                case 'price_asc':
-                    materialArray.sort((a, b) => a.price - b.price);
-                    break;
-                case 'price_desc':
-                    materialArray.sort((a, b) => b.price - a.price);
-                    break;
-                case 'category':
-                    materialArray.sort((a, b) => getCatName(a).localeCompare(getCatName(b)));
-                    break;
-            }
+        // ==========================================
+        // 5. مواد اولیه
+        // ==========================================
+        function sortMaterials(list, key) {
+            list.sort((a, b) => {
+                if (key === 'name_asc') return a.name.localeCompare(b.name);
+                if (key === 'price_desc') return b.price - a.price;
+                if (key === 'price_asc') return a.price - b.price;
+                if (key === 'date_desc') return new Date(b.$updatedAt) - new Date(a.$updatedAt);
+                return 0;
+            });
         }
 
         async function handleSaveMaterial(e) {
@@ -582,22 +552,55 @@
             const price = parseFloat(document.getElementById('mat-price').value.replace(/,/g, ''));
             const category_id = document.getElementById('mat-category').value || null;
 
-            if (!id && state.materials.some(m => m.name === name)) return alert('نام کالا تکراری است!');
+            const data = { name, unit, price, category_id };
 
             try {
-                const data = { name, unit, price, category_id };
-                let res;
                 if (id) {
-                    res = await db.updateDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.MATS, id, data);
-                    const idx = state.materials.findIndex(m => m.$id === id);
-                    state.materials[idx] = res;
+                    await db.updateDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.MATS, id, data);
                 } else {
-                    res = await db.createDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.MATS, ID.unique(), data);
-                    state.materials.push(res);
+                    await db.createDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.MATS, ID.unique(), data);
                 }
-                updateUI();
                 resetMaterialForm();
-            } catch (err) { alert('خطا در ذخیره: ' + err.message); }
+                await loadAllData();
+            } catch (err) { alert('خطا: ' + err.message); }
+        }
+
+        function renderMaterials(filter = '') {
+            const container = document.getElementById('materials-container');
+            const filtered = state.materials.filter(m => m.name.includes(filter));
+            
+            if (filtered.length === 0) {
+                container.innerHTML = '<p class="col-span-full text-center text-slate-400 py-8">موردی یافت نشد</p>';
+                return;
+            }
+
+            container.innerHTML = filtered.map(m => {
+                const cat = state.categories.find(c => c.$id === m.category_id)?.name || 'سایر';
+                // تاریخ بروزرسانی (محاسبه اختلاف زمانی)
+                const diffDays = Math.floor((new Date() - new Date(m.$updatedAt)) / (1000 * 60 * 60 * 24));
+                const isOld = diffDays > 30;
+                
+                return `
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 hover:border-teal-400 transition-all group relative shadow-sm hover:shadow-md">
+                    <div class="flex justify-between items-start">
+                        <span class="bg-slate-100 text-slate-500 text-[10px] px-2 py-1 rounded border border-slate-200">${cat}</span>
+                        <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="editMaterial('${m.$id}')" class="text-amber-500 hover:bg-amber-50 p-1 rounded">✏️</button>
+                            <button onclick="deleteMaterial('${m.$id}')" class="text-rose-500 hover:bg-rose-50 p-1 rounded">🗑</button>
+                        </div>
+                    </div>
+                    <div class="mt-2 font-bold text-slate-800 text-lg">${m.name}</div>
+                    <div class="mt-4 flex justify-between items-end border-t border-slate-100 pt-3">
+                        <div class="flex flex-col items-start">
+                            <span class="text-xs text-slate-400">${m.unit}</span>
+                            <div class="update-badge mt-1 ${isOld ? 'old' : 'new'}">
+                                <span>${formatDate(m.$updatedAt)}</span>
+                            </div>
+                        </div>
+                        <div class="font-mono font-black text-teal-700 text-xl tracking-tight">${formatPrice(m.price)}</div>
+                    </div>
+                </div>`;
+            }).join('');
         }
 
         function editMaterial(id) {
@@ -609,521 +612,430 @@
             document.getElementById('mat-price').value = formatPrice(m.price);
             document.getElementById('mat-category').value = m.category_id || "";
             
-            document.getElementById('mat-submit-btn').textContent = "به‌روزرسانی کالا";
-            document.getElementById('mat-submit-btn').classList.replace('btn-primary', 'btn-warning');
+            document.getElementById('mat-submit-btn').innerText = "به‌روزرسانی کالا";
+            document.getElementById('mat-submit-btn').classList.add('bg-amber-500', 'hover:bg-amber-600', 'text-white');
+            document.getElementById('mat-submit-btn').classList.remove('btn-primary');
             document.getElementById('mat-cancel-btn').classList.remove('hidden');
             
-            document.getElementById('tab-materials').scrollIntoView({behavior: 'smooth'});
+            // اسکرول به بالا
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function deleteMaterial(id) {
+            if(!confirm('حذف شود؟')) return;
+            await db.deleteDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.MATS, id);
+            await loadAllData();
         }
 
         function resetMaterialForm() {
             document.getElementById('material-form').reset();
             document.getElementById('mat-id').value = '';
-            document.getElementById('mat-submit-btn').textContent = "ذخیره کالا در انبار";
-            document.getElementById('mat-submit-btn').classList.replace('btn-warning', 'btn-primary');
+            const btn = document.getElementById('mat-submit-btn');
+            btn.innerText = "ذخیره در انبار";
+            btn.classList.remove('bg-amber-500', 'hover:bg-amber-600');
+            btn.classList.add('btn-primary');
             document.getElementById('mat-cancel-btn').classList.add('hidden');
         }
 
-        function renderMaterials(filter = '') {
-            state.materialFilter = filter;
-            state.materialSort = document.getElementById('sort-materials').value;
-
-            let filtered = state.materials.filter(m => m.name.includes(state.materialFilter));
-            sortMaterials(filtered, state.materialSort);
-            
-            const container = document.getElementById('materials-container');
-            
-            if (filtered.length === 0) {
-                container.innerHTML = '<p class="col-span-full text-center text-slate-400 py-8">موردی یافت نشد</p>';
-                return;
-            }
-
-            container.innerHTML = filtered.map(m => {
-                const cat = state.categories.find(c => c.$id === m.category_id)?.name || 'بدون دسته';
-                return `
-                <div class="bg-white p-5 rounded-2xl border border-slate-200 hover:shadow-lg transition-all relative group border-b-4 border-b-teal-500">
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="bg-slate-100 text-slate-600 text-[11px] px-2 py-1 rounded-md font-bold">${cat}</span>
-                        <div class="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                            <button onclick="editMaterial('${m.$id}')" class="text-amber-500 hover:text-amber-600" title="ویرایش">✎</button>
-                            <button onclick="deleteMaterial('${m.$id}')" class="text-rose-500 hover:text-rose-600" title="حذف">✕</button>
-                        </div>
-                    </div>
-                    <h3 class="font-bold text-slate-800 text-lg mb-1">${m.name}</h3>
-                    
-                    <div class="mt-4 pt-3 border-t border-slate-100">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-xs text-slate-400">واحد: ${m.unit}</span>
-                            <span class="font-black text-teal-700 font-mono text-lg">${formatPrice(m.price)}</span>
-                        </div>
-                        
-                        <!-- DATE BADGE (High Visibility) -->
-                        <div class="flex items-center justify-end">
-                             <div class="update-badge">
-                                <span>بروزرسانی: ${formatDate(m.$updatedAt)}</span>
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                             </div>
-                        </div>
-                    </div>
-                </div>
-            `}).join('');
-        }
-
         function updateDropdowns() {
-            let options = '<option value="">-- انتخاب کنید --</option>';
-            
-            state.categories.forEach(cat => {
-                const items = state.materials.filter(m => m.category_id === cat.$id);
-                if(items.length) {
-                    options += `<optgroup label="${cat.name}">`;
-                    items.forEach(m => options += `<option value="${m.$id}">${m.name}</option>`);
-                    options += `</optgroup>`;
-                }
-            });
-            
-            const noCat = state.materials.filter(m => !m.category_id);
-            if(noCat.length) {
-                options += `<optgroup label="سایر">`;
-                noCat.forEach(m => options += `<option value="${m.$id}">${m.name}</option>`);
-                options += `</optgroup>`;
-            }
-
-            // Update material form dropdown
-            const matCatSelect = document.getElementById('mat-category');
-            if(matCatSelect) {
-                matCatSelect.innerHTML = '<option value="">-- انتخاب دسته --</option>' + 
+            const sel = document.getElementById('mat-category');
+            const currentVal = sel.value;
+            sel.innerHTML = '<option value="">-- انتخاب کنید --</option>' + 
                 state.categories.map(c => `<option value="${c.$id}">${c.name}</option>`).join('');
-            }
-            
-            // Update formula component dropdown (only if active)
-            const compSelect = document.getElementById('comp-select');
-            if(compSelect) {
-                 const currentFormulaId = state.activeFormulaId;
-                 let formulaOptions = options;
-                 
-                 const otherFormulas = state.formulas.filter(x => x.$id !== currentFormulaId);
-                 if(otherFormulas.length) {
-                    formulaOptions += `<optgroup label="فرمول‌های دیگر (زیرمجموعه)">` + 
-                        otherFormulas.map(x => `<option value="FORM:${x.$id}">🔗 ${x.name}</option>`).join('') + 
-                        `</optgroup>`;
-                 }
-                 compSelect.innerHTML = formulaOptions;
+            sel.value = currentVal;
+
+            // آپدیت فیلتر در فرمول‌ها
+            const activeId = state.activeFormulaId;
+            if(activeId) {
+                const filterSel = document.getElementById(`comp-filter-${activeId}`);
+                if(filterSel) {
+                     filterSel.innerHTML = '<option value="">همه دسته‌ها</option>' + 
+                        state.categories.map(c => `<option value="${c.$id}">${c.name}</option>`).join('') + 
+                        '<option value="formulas">فرمول‌های زیرمجموعه</option>';
+                }
+                updateComponentSelect(activeId);
             }
         }
 
-        // ------------------------------------------------------------------
-        // 6. FORMULAS LOGIC
-        // ------------------------------------------------------------------
-        async function handleCreateFormula(e) {
-            e.preventDefault();
-            const name = document.getElementById('new-formula-name').value;
+        // ==========================================
+        // 6. فرمول‌ها (Formulas)
+        // ==========================================
+        async function handleCreateFormula() {
+            const name = document.getElementById('new-formula-name').value.trim();
+            if(!name) return;
             try {
                 const res = await db.createDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.FORMS, ID.unique(), {
                     name, 
-                    components: JSON.stringify([]), 
-                    labor: 0.0, overhead: 0.0, profit: 0.0
+                    components_json: '[]', 
+                    labor: 0.0, overhead: 0.0, profit: 0.0,
+                    is_public: false
                 });
-                state.formulas.unshift(res); // Add to top
+                state.formulas.unshift(res);
                 document.getElementById('new-formula-name').value = '';
+                document.getElementById('new-formula-modal').classList.remove('flex');
+                document.getElementById('new-formula-modal').classList.add('hidden');
                 selectFormula(res.$id);
             } catch(err) { console.error(err); }
         }
 
+        function renderFormulaList(filter = '') {
+            const list = state.formulas.filter(f => f.name.includes(filter));
+            document.getElementById('formula-master-list').innerHTML = list.map(f => `
+                <div onclick="selectFormula('${f.$id}')" class="p-4 border-b border-slate-100 cursor-pointer hover:bg-teal-50 transition-all flex justify-between items-center group ${f.$id === state.activeFormulaId ? 'bg-teal-50 border-r-4 border-teal-600' : ''}">
+                    <div>
+                        <div class="font-bold text-slate-700 text-sm group-hover:text-teal-700">${f.name}</div>
+                        <div class="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+                            <span>🕒 ${formatDate(f.$updatedAt)}</span>
+                        </div>
+                    </div>
+                    <button onclick="event.stopPropagation(); deleteFormula('${f.$id}')" class="text-slate-300 hover:text-rose-500 p-2 rounded-full hover:bg-rose-50 opacity-0 group-hover:opacity-100 transition-opacity">×</button>
+                </div>
+            `).join('');
+        }
+
         function selectFormula(id) {
             state.activeFormulaId = id;
-            renderFormulaList();
+            renderFormulaList(); // برای آپدیت استایل اکتیو
             document.getElementById('formula-detail-empty').classList.add('hidden');
             document.getElementById('formula-detail-view').classList.remove('hidden');
             renderFormulaDetail(id);
         }
 
-        async function deleteFormula(id) {
-            if(!confirm('آیا از حذف این فرمول مطمئن هستید؟')) return;
-            try {
-                await db.deleteDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.FORMS, id);
-                state.formulas = state.formulas.filter(f => f.$id !== id);
-                if(state.activeFormulaId === id) {
-                    state.activeFormulaId = null;
-                    document.getElementById('formula-detail-view').classList.add('hidden');
-                    document.getElementById('formula-detail-empty').classList.remove('hidden');
-                }
-                renderFormulaList();
-            } catch(err) { console.error(err); }
-        }
-
-        function renderFormulaList(filter = '') {
-            const list = document.getElementById('formula-master-list');
-            const filtered = state.formulas.filter(f => f.name.includes(filter));
-            
-            list.innerHTML = filtered.map(f => `
-                <div onclick="selectFormula('${f.$id}')" class="p-4 border-b border-slate-100 cursor-pointer hover:bg-teal-50 transition-all flex justify-between items-center ${f.$id === state.activeFormulaId ? 'bg-teal-50 border-r-4 border-teal-600' : ''}">
-                    <div class="flex flex-col">
-                        <span class="font-bold text-slate-700 text-sm">${f.name}</span>
-                        <span class="text-[10px] text-slate-400 mt-1">آخرین تغییر: ${formatDate(f.$updatedAt)}</span>
-                    </div>
-                    <button onclick="event.stopPropagation(); deleteFormula('${f.$id}')" class="text-slate-300 hover:text-rose-500 p-1">✖</button>
-                </div>
-            `).join('');
-        }
-        
-        // --- CORE COST CALCULATION ---
-        function calculateCost(formulaId, stack = []) {
-            if(stack.includes(formulaId)) return { cost: 0, final: 0, error: true }; 
-            
-            const f = state.formulas.find(x => x.$id === formulaId);
-            if(!f) return { cost: 0, final: 0 };
-
+        // محاسبه بازگشتی قیمت
+        function calculateCost(f) {
             let matCost = 0;
-            const components = JSON.parse(f.components || '[]');
-
-            components.forEach(comp => {
-                if(comp.type === 'mat') {
-                    const m = state.materials.find(x => x.$id === comp.id);
-                    if(m) matCost += m.price * comp.qty;
-                } else if (comp.type === 'form') {
-                    const sub = calculateCost(comp.id, [...stack, formulaId]);
-                    matCost += sub.final * comp.qty;
+            const comps = JSON.parse(f.components_json || '[]');
+            comps.forEach(c => {
+                if(c.type === 'mat') {
+                    const m = state.materials.find(x => x.$id === c.id);
+                    if(m) matCost += m.price * c.qty;
+                } else if (c.type === 'form') {
+                    const sub = state.formulas.find(x => x.$id === c.id);
+                    if(sub) matCost += calculateCost(sub).final * c.qty; // بازگشتی
                 }
             });
-
-            const labor = f.labor || 0;
-            const overhead = f.overhead || 0;
-            const sub = matCost + labor + overhead;
+            const sub = matCost + (f.labor || 0) + (f.overhead || 0);
             const profit = (f.profit || 0) / 100 * sub;
-            return {
-                matCost, labor, overhead, sub, profit,
-                final: sub + profit
-            };
+            return { matCost, sub, profit, final: sub + profit };
         }
-        
-        // --- RENDER DETAIL VIEW ---
+
         function renderFormulaDetail(id) {
             const f = state.formulas.find(x => x.$id === id);
             if(!f) return;
-            
-            const calc = calculateCost(id);
-            const components = JSON.parse(f.components || '[]');
+            const calc = calculateCost(f);
+            const comps = JSON.parse(f.components_json || '[]');
 
-            const rows = components.map((c, idx) => {
-                let name = '?', unit = '-', price = 0, total = 0, lastUpdate = '';
-                
+            // ساخت ردیف‌های جدول
+            const rows = comps.map((c, idx) => {
+                let name='?', unit='-', price=0, total=0;
                 if(c.type === 'mat') {
                     const m = state.materials.find(x => x.$id === c.id);
-                    if(m) { 
-                        name = m.name; unit = m.unit; price = m.price; total = price * c.qty; 
-                        lastUpdate = m.$updatedAt;
-                    }
-                    else name = '<span class="text-red-500 italic">کالا حذف شده</span>';
+                    if(m) { name=m.name; unit=m.unit; price=m.price; total=price*c.qty; }
+                    else name=`<span class="text-red-500">کالا حذف شده (${c.id})</span>`;
                 } else {
                     const sub = state.formulas.find(x => x.$id === c.id);
-                    if(sub) { 
-                        name = `<span class="text-blue-600 font-bold flex items-center gap-1"><span class="text-xs">🔗</span> ${sub.name}</span>`; 
-                        unit = 'عدد'; 
-                        const subCalc = calculateCost(c.id, [id]);
-                        price = subCalc.final;
-                        total = price * c.qty;
-                        lastUpdate = sub.$updatedAt;
-                    }
+                    if(sub) { name=`<span class="text-purple-600 font-bold">🔗 ${sub.name}</span>`; unit='عدد'; price=calculateCost(sub).final; total=price*c.qty; }
                 }
-
                 return `
-                    <div class="flex justify-between items-center p-3 border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors">
-                        <div class="flex-grow">
-                            <div class="font-bold text-slate-700 text-sm">${name}</div>
-                            <div class="text-xs text-slate-400 mt-1 flex flex-wrap gap-2 items-center">
-                                <span class="font-mono">${c.qty} ${unit} × ${formatPrice(price)}</span>
-                                ${lastUpdate ? `<span class="bg-red-50 text-red-600 px-1.5 py-0.5 rounded text-[10px] border border-red-100">قیمت: ${formatDate(lastUpdate)}</span>` : ''}
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <span class="font-mono font-bold text-slate-600 text-sm">${formatPrice(total)}</span>
-                            <button onclick="removeComponent('${id}', ${idx})" class="text-slate-300 hover:text-rose-500 font-bold px-2 transition-colors">×</button>
-                        </div>
+                <div class="flex justify-between items-center p-3 border-b border-slate-100 last:border-0 hover:bg-slate-50 group transition-colors">
+                    <div class="flex-grow">
+                        <div class="font-bold text-slate-700 text-sm">${name}</div>
+                        <div class="text-xs text-slate-400 mt-1"><span class="font-mono text-slate-600 bg-slate-100 px-1 rounded">${c.qty}</span> ${unit} × <span class="font-mono">${formatPrice(price)}</span></div>
                     </div>
-                `;
+                    <div class="flex items-center gap-4">
+                        <span class="font-mono font-bold text-slate-600 text-sm">${formatPrice(total)}</span>
+                        <button onclick="removeComp('${id}', ${idx})" class="text-rose-300 hover:text-rose-600 p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">🗑</button>
+                    </div>
+                </div>`;
             }).join('');
 
-            const view = document.getElementById('formula-detail-view');
-            view.innerHTML = `
-                <!-- Header Card -->
-                <div class="card !mb-0 border-teal-500">
-                    <div class="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
-                         <div>
-                            <div class="flex items-center gap-2">
-                                <h2 class="text-2xl font-black text-slate-800 leading-tight" id="formula-name-display-${id}">${f.name}</h2>
-                                <button onclick="toggleEditName('${id}')" class="text-slate-400 hover:text-teal-600 active:scale-90 transition-transform">✎</button>
+            document.getElementById('formula-detail-view').innerHTML = `
+                <div class="card !mb-0 border-t-0 !shadow-none">
+                    <!-- هدر فرمول با قابلیت ویرایش نام -->
+                    <div class="flex justify-between items-start mb-6 pb-4 border-b border-slate-100">
+                        <div class="w-full">
+                            <div class="flex items-center gap-2 group mb-2">
+                                <h2 class="text-2xl font-black text-slate-800 cursor-text hover:bg-slate-50 px-2 rounded -ml-2 border border-transparent hover:border-slate-200 transition-all" onclick="editFormulaName('${id}')" title="برای ویرایش کلیک کنید">${f.name}</h2>
+                                <span class="text-slate-300 text-sm group-hover:text-teal-500">✎</span>
                             </div>
-                            <div id="formula-name-edit-form-${id}" class="hidden flex gap-2 items-center mt-2">
-                                <input type="text" id="formula-name-input-${id}" class="input-field text-lg" value="${f.name}" required>
-                                <button onclick="saveFormulaName('${id}')" class="btn btn-primary px-3 py-1 text-sm">ذخیره</button>
-                                <button onclick="toggleEditName('${id}')" class="btn btn-danger px-3 py-1 text-sm">لغو</button>
+                            <div class="flex gap-2">
+                                <span class="text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded">آخرین ذخیره: ${formatDate(f.$updatedAt)}</span>
+                                <span class="text-[10px] bg-teal-50 text-teal-600 px-2 py-1 rounded border border-teal-100">ID: ${f.$id}</span>
                             </div>
-                            <span class="text-xs text-slate-400 mt-1 block">شناسه سیستمی: ${f.$id}</span>
-                         </div>
-                         <div class="flex items-center gap-2 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
-                            <span class="text-slate-500 text-xs">آخرین ویرایش فرمول:</span>
-                            <span class="font-bold text-slate-700 text-sm font-mono" dir="ltr">${formatDate(f.$updatedAt)}</span>
-                         </div>
+                        </div>
+                        <button onclick="deleteFormula('${id}')" class="btn btn-danger px-3 py-2 text-xs">حذف کل محصول</button>
                     </div>
                     
-                    <!-- Add Component Box (with Filter) -->
-                    <form onsubmit="addComponent(event, '${id}')" class="bg-slate-100 p-4 rounded-xl mb-6 flex flex-col md:flex-row gap-2 shadow-inner border border-slate-200">
-                        <select id="comp-category-filter-${id}" onchange="updateComponentSelect('${id}')" class="input-field w-full md:w-40 text-sm">
-                            <option value="">-- فیلتر دسته‌بندی --</option>
-                            ${state.categories.map(c => `<option value="${c.$id}">${c.name}</option>`).join('')}
-                            <option value="formulas">فرمول‌های زیرمجموعه</option>
-                        </select>
-                        <select id="comp-select" class="flex-grow md:w-1/2 input-field" required></select>
-                        <input type="number" id="comp-qty" step="any" placeholder="مقدار" class="w-full md:w-24 input-field text-center font-bold" required>
-                        <button type="submit" class="btn-primary px-6 py-2 rounded-lg shadow-sm hover:shadow-md">+</button>
+                    <!-- افزودن جزء -->
+                    <form onsubmit="addComp(event, '${id}')" class="bg-slate-50 p-4 rounded-2xl mb-6 flex flex-col md:flex-row gap-3 border border-slate-200">
+                        <div class="w-full md:w-40">
+                            <select id="comp-filter-${id}" onchange="updateComponentSelect('${id}')" class="input-field text-xs h-full">
+                                <option value="">همه دسته‌ها</option>
+                                ${state.categories.map(c => `<option value="${c.$id}">${c.name}</option>`).join('')}
+                                <option value="formulas">محصولات دیگر</option>
+                            </select>
+                        </div>
+                        <div class="flex-grow">
+                            <select id="comp-select-${id}" class="input-field h-full text-sm" required></select>
+                        </div>
+                        <div class="w-24">
+                            <input type="number" id="comp-qty-${id}" step="any" placeholder="تعداد" class="input-field h-full text-center font-bold" required>
+                        </div>
+                        <button class="btn btn-primary px-6 text-xl leading-none rounded-xl shadow-none">+</button>
                     </form>
 
-                    <!-- Components List -->
-                    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden mb-6 shadow-sm max-h-72 overflow-y-auto">
-                        ${rows || '<div class="p-8 text-center text-slate-400 text-sm flex flex-col items-center gap-2"><span class="text-2xl">📭</span>لیست مواد اولیه خالی است</div>'}
+                    <!-- لیست اجزا -->
+                    <div class="border border-slate-200 rounded-2xl overflow-hidden mb-6 max-h-64 overflow-y-auto custom-scrollbar bg-white">
+                        ${rows || '<p class="text-center text-slate-400 p-8 text-sm flex flex-col items-center gap-2"><span class="text-3xl opacity-50">📦</span>هنوز ماده‌ای اضافه نشده است</p>'}
                     </div>
 
-                    <!-- Costs Input Grid -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 bg-slate-50 p-5 rounded-xl border border-slate-200">
+                    <!-- هزینه‌ها -->
+                    <div class="grid grid-cols-3 gap-4 mb-6 bg-slate-50 p-5 rounded-2xl border border-slate-200">
                         <div>
-                            <label class="text-xs font-bold text-slate-500 mb-1 block">دستمزد (تومان)</label>
-                            <input type="text" class="input-field font-bold text-slate-700 price-input" value="${formatPrice(f.labor)}" onchange="updateFormulaCost('${id}', 'labor', this.value)">
+                            <label class="text-xs text-slate-500 font-bold block mb-2">دستمزد (تومان)</label>
+                            <input class="input-field text-sm h-10 font-mono font-bold text-slate-700" value="${formatPrice(f.labor)}" onchange="updateCost('${id}','labor',this.value)">
                         </div>
                         <div>
-                            <label class="text-xs font-bold text-slate-500 mb-1 block">سربار (تومان)</label>
-                            <input type="text" class="input-field font-bold text-slate-700 price-input" value="${formatPrice(f.overhead)}" onchange="updateFormulaCost('${id}', 'overhead', this.value)">
+                            <label class="text-xs text-slate-500 font-bold block mb-2">سربار (تومان)</label>
+                            <input class="input-field text-sm h-10 font-mono font-bold text-slate-700" value="${formatPrice(f.overhead)}" onchange="updateCost('${id}','overhead',this.value)">
                         </div>
                         <div>
-                            <label class="text-xs font-bold text-slate-500 mb-1 block">سود (درصد)</label>
-                            <input type="number" class="input-field font-bold text-slate-700 price-input" value="${f.profit}" onchange="updateFormulaCost('${id}', 'profit', this.value)">
+                            <label class="text-xs text-slate-500 font-bold block mb-2">سود (%)</label>
+                            <input type="number" class="input-field text-sm h-10 font-mono font-bold text-slate-700" value="${f.profit}" onchange="updateCost('${id}','profit',this.value)">
                         </div>
                     </div>
 
-                    <!-- Final Calculation Card (Dark) -->
-                    <div class="bg-slate-800 text-white p-6 rounded-xl shadow-xl relative overflow-hidden">
-                        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-400 to-cyan-400"></div>
+                    <!-- کارت نهایی قیمت -->
+                    <div class="bg-slate-800 text-white p-6 rounded-2xl shadow-xl relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-500"></div>
                         
-                        <div class="flex justify-between text-sm text-slate-400 mb-4 border-b border-slate-700 pb-3">
-                            <span>هزینه تولید (مواد ${formatPrice(calc.matCost)} + دستمزد + سربار):</span> <span class="font-mono">${formatPrice(calc.sub)}</span>
+                        <div class="flex justify-between text-sm text-slate-400 mb-2">
+                            <span>جمع مواد اولیه:</span> 
+                            <span class="font-mono text-slate-200">${formatPrice(calc.matCost)}</span>
+                        </div>
+                        <div class="flex justify-between text-sm text-slate-400 pb-4 border-b border-slate-700 mb-4">
+                            <span>هزینه تولید (مواد + دستمزد + سربار):</span> 
+                            <span class="font-mono text-slate-200">${formatPrice(calc.sub)}</span>
                         </div>
                         
-                        <div class="flex flex-col items-center justify-center bg-slate-900/50 p-6 rounded-xl border border-slate-700">
-                             <span class="text-slate-400 text-xs mb-1 uppercase tracking-widest">قیمت تمام شده نهایی</span>
-                             <span class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-200 to-cyan-200 tracking-tight">${formatPrice(calc.final)}</span>
-                             <span class="text-sm text-slate-500">تومان</span>
+                        <div class="flex flex-col items-center justify-center py-2">
+                            <span class="text-slate-400 text-xs uppercase tracking-widest mb-1">قیمت نهایی فروش</span>
+                            <span class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-slate-400 font-mono tracking-tight">${formatPrice(calc.final)}</span>
+                            <span class="text-sm text-teal-400 mt-1">تومان</span>
                         </div>
-
-                        <button onclick="showPrintModal('${id}')" class="w-full mt-6 bg-white text-slate-900 py-3 rounded-lg hover:bg-slate-100 transition-colors text-sm font-bold flex justify-center items-center gap-2 shadow-lg">
-                            <span>🖨</span> مشاهده و چاپ پیش‌فاکتور
+                        
+                        <button onclick="printFormula('${id}')" class="w-full mt-6 btn bg-white/10 hover:bg-white/20 border border-white/10 text-white text-sm backdrop-blur-sm">
+                            🖨 مشاهده و چاپ پیش‌فاکتور
                         </button>
                     </div>
                 </div>
             `;
             
-            // Initial call to fill component select
             updateComponentSelect(id);
         }
 
-        // --- FORMULA NAME EDIT LOGIC ---
-        function toggleEditName(id) {
-            const display = document.getElementById(`formula-name-display-${id}`);
-            const editForm = document.getElementById(`formula-name-edit-form-${id}`);
+        // --- FORMULA ACTIONS ---
+        function updateComponentSelect(id) {
+            const filter = document.getElementById(`comp-filter-${id}`).value;
+            const select = document.getElementById(`comp-select-${id}`);
+            let options = '<option value="">انتخاب کنید...</option>';
 
-            if (display.style.display !== 'none') {
-                display.style.display = 'none';
-                editForm.style.display = 'flex';
-                document.getElementById(`formula-name-input-${id}`).focus();
-            } else {
-                display.style.display = 'block';
-                editForm.style.display = 'none';
-            }
-        }
-
-        async function saveFormulaName(id) {
-            const input = document.getElementById(`formula-name-input-${id}`);
-            const newName = input.value.trim();
-            if (!newName) return;
-
-            try {
-                await db.updateDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.FORMS, id, { name: newName });
-                const f = state.formulas.find(x => x.$id === id);
-                f.name = newName;
-                f.$updatedAt = new Date().toISOString();
-                toggleEditName(id);
-                renderFormulaDetail(id);
-                renderFormulaList();
-            } catch(err) { console.error(err); }
-        }
-
-        // --- COMPONENT SELECT FILTER LOGIC ---
-        function updateComponentSelect(currentFormulaId) {
-            const filterId = document.getElementById(`comp-category-filter-${currentFormulaId}`).value;
-            const selectEl = document.getElementById('comp-select');
-            
-            let options = '<option value="">-- انتخاب کنید --</option>';
-
-            if (filterId === 'formulas') {
-                 // Show only other formulas (for nested logic)
-                 const otherFormulas = state.formulas.filter(x => x.$id !== currentFormulaId);
-                 if(otherFormulas.length) {
-                    options += `<optgroup label="فرمول‌های زیرمجموعه">` + 
-                        otherFormulas.map(x => `<option value="FORM:${x.$id}">🔗 ${x.name}</option>`).join('') + 
+            if(filter === 'formulas') {
+                const others = state.formulas.filter(f => f.$id !== id);
+                if(others.length) {
+                    options += `<optgroup label="محصولات دیگر">` + 
+                        others.map(f => `<option value="FORM:${f.$id}">🔗 ${f.name}</option>`).join('') + 
                         `</optgroup>`;
-                 }
+                }
             } else {
-                // Show materials, filtered by category ID
-                const filteredMaterials = state.materials.filter(m => filterId === '' || m.category_id === filterId);
-                
-                const categorizedItems = {};
-                filteredMaterials.forEach(m => {
-                    const catName = state.categories.find(c => c.$id === m.category_id)?.name || 'سایر';
-                    if (!categorizedItems[catName]) categorizedItems[catName] = [];
-                    categorizedItems[catName].push(m);
+                const mats = state.materials.filter(m => filter === '' || m.category_id === filter);
+                // گروه بندی مواد بر اساس دسته برای نمایش بهتر در صورت انتخاب "همه"
+                state.categories.forEach(cat => {
+                     if(filter !== '' && filter !== cat.$id) return;
+                     const catMats = mats.filter(m => m.category_id === cat.$id);
+                     if(catMats.length) {
+                         options += `<optgroup label="${cat.name}">` + 
+                             catMats.map(m => `<option value="MAT:${m.$id}">${m.name}</option>`).join('') + 
+                             `</optgroup>`;
+                     }
                 });
-
-                for (const catName in categorizedItems) {
-                    options += `<optgroup label="${catName}">`;
-                    categorizedItems[catName].forEach(m => {
-                        options += `<option value="${m.$id}">${m.name} (${m.unit})</option>`;
-                    });
-                    options += `</optgroup>`;
+                // بدون دسته
+                const noCat = mats.filter(m => !m.category_id);
+                if(noCat.length && (filter === '' || filter === 'null')) {
+                    options += `<optgroup label="سایر">` + noCat.map(m => `<option value="MAT:${m.$id}">${m.name}</option>`).join('') + `</optgroup>`;
                 }
             }
-            
-            selectEl.innerHTML = options;
+            select.innerHTML = options;
         }
 
-
-        // --- FORMULA DB ACTIONS ---
-        async function addComponent(e, fid) {
+        async function addComp(e, fid) {
             e.preventDefault();
-            const val = document.getElementById('comp-select').value;
-            const qty = parseFloat(document.getElementById('comp-qty').value);
-            
-            if (!val || isNaN(qty) || qty <= 0) return alert('لطفاً جزء و مقدار صحیح را انتخاب کنید.');
+            const val = document.getElementById(`comp-select-${fid}`).value;
+            const qty = parseFloat(document.getElementById(`comp-qty-${fid}`).value);
+            if(!val) return;
 
-            let type = 'mat', id = val;
-            if(val.startsWith('FORM:')) { type = 'form'; id = val.split(':')[1]; }
+            const [prefix, id] = val.split(':');
+            const type = prefix === 'MAT' ? 'mat' : 'form';
 
             const f = state.formulas.find(x => x.$id === fid);
-            const comps = JSON.parse(f.components || '[]');
+            const comps = JSON.parse(f.components_json || '[]');
             
             const exist = comps.find(c => c.id === id && c.type === type);
-            if(exist) exist.qty += qty;
-            else comps.push({ id, type, qty });
+            if(exist) exist.qty += qty; else comps.push({id, type, qty});
 
             try {
-                await db.updateDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.FORMS, fid, { components: JSON.stringify(comps) });
-                f.components = JSON.stringify(comps);
-                f.$updatedAt = new Date().toISOString();
+                await db.updateDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.FORMS, fid, { components_json: JSON.stringify(comps) });
+                await loadAllData();
                 renderFormulaDetail(fid);
             } catch(err) { console.error(err); }
         }
 
-        async function removeComponent(fid, idx) {
+        async function removeComp(fid, idx) {
             const f = state.formulas.find(x => x.$id === fid);
-            const comps = JSON.parse(f.components || '[]');
+            const comps = JSON.parse(f.components_json || '[]');
             comps.splice(idx, 1);
-            try {
-                await db.updateDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.FORMS, fid, { components: JSON.stringify(comps) });
-                f.components = JSON.stringify(comps);
-                renderFormulaDetail(fid);
-            } catch(err) { console.error(err); }
+            await db.updateDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.FORMS, fid, { components_json: JSON.stringify(comps) });
+            await loadAllData();
+            renderFormulaDetail(fid);
         }
 
-        async function updateFormulaCost(fid, field, val) {
-            let num = parseFloat(val.replace(/,/g, '')) || 0;
-            const f = state.formulas.find(x => x.$id === fid);
-            f[field] = num;
-            f.$updatedAt = new Date().toISOString();
-            try {
-                await db.updateDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.FORMS, fid, { [field]: num });
-                renderFormulaDetail(fid);
-                renderFormulaList(); 
-            } catch(err) { console.error(err); }
+        async function updateCost(fid, field, val) {
+            const num = parseFloat(val.replace(/,/g, '')) || 0;
+            await db.updateDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.FORMS, fid, { [field]: num });
+            await loadAllData();
+            renderFormulaDetail(fid);
         }
 
-        // ------------------------------------------------------------------
-        // 7. PRINT LOGIC
-        // ------------------------------------------------------------------
-        window.showPrintModal = (id) => {
+        async function editFormulaName(id) {
             const f = state.formulas.find(x => x.$id === id);
-            const calc = calculateCost(id);
+            const newName = prompt("نام جدید محصول را وارد کنید:", f.name);
+            if(newName && newName !== f.name) {
+                await db.updateDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.FORMS, id, { name: newName });
+                await loadAllData();
+                renderFormulaDetail(id);
+            }
+        }
 
-            document.getElementById('print-title').textContent = f.name;
-            document.getElementById('print-date').textContent = `تاریخ صدور: ${new Date().toLocaleDateString('fa-IR')}`;
+        async function deleteFormula(id) {
+            if(confirm('آیا مطمئن هستید؟ این عمل غیرقابل بازگشت است.')) {
+                await db.deleteDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.FORMS, id);
+                state.activeFormulaId = null;
+                document.getElementById('formula-detail-view').classList.add('hidden');
+                document.getElementById('formula-detail-empty').classList.remove('hidden');
+                await loadAllData();
+            }
+        }
 
-            let rowsHtml = '';
-            
-            const getPrintItems = (formulaId, qtyMult = 1, depth = 0) => {
-                const frm = state.formulas.find(x => x.$id === formulaId);
-                if(!frm) return;
-                const cmps = JSON.parse(frm.components || '[]');
-                
-                cmps.forEach(c => {
-                    if(c.type === 'mat') {
-                        const m = state.materials.find(x => x.$id === c.id);
-                        if(m) {
-                            rowsHtml += `
-                                <tr class="border-b border-slate-200 ${depth > 0 ? 'bg-slate-50 text-slate-500 text-xs' : ''}">
-                                    <td class="p-3 text-right ${depth > 0 ? 'pl-8' : ''}">${depth > 0 ? '↳ ' : ''}${m.name}</td>
-                                    <td class="p-3 text-center font-mono" dir="ltr">${(c.qty * qtyMult).toLocaleString()}</td>
-                                    <td class="p-3 text-center">${m.unit}</td>
-                                </tr>
-                            `;
-                        }
-                    } else {
-                         const sub = state.formulas.find(x => x.$id === c.id);
-                         if(sub) {
-                             rowsHtml += `
-                                <tr class="border-b border-slate-200 bg-slate-100 font-bold text-slate-700">
-                                    <td class="p-3 text-right ${depth > 0 ? 'pl-8' : ''}">🔹 ${sub.name}</td>
-                                    <td class="p-3 text-center" dir="ltr">${(c.qty * qtyMult).toLocaleString()}</td>
-                                    <td class="p-3 text-center">عدد</td>
-                                </tr>
-                            `;
-                            getPrintItems(c.id, c.qty * qtyMult, depth + 1);
-                         }
-                    }
+        // ==========================================
+        // 7. BANK / STORE (فروشگاه داده)
+        // ==========================================
+        function renderStore() {
+            const list = document.getElementById('store-container');
+            if(state.publicFormulas.length === 0) {
+                list.innerHTML = `<div class="col-span-full text-center p-12 bg-white rounded-2xl border-2 border-dashed border-purple-200 text-purple-400">
+                    <span class="text-4xl block mb-2">💎</span>
+                    هنوز قالب آماده‌ای برای فروش موجود نیست.
+                </div>`;
+                return;
+            }
+
+            list.innerHTML = state.publicFormulas.map(f => `
+                <div class="bg-white p-6 rounded-2xl border border-purple-100 shadow-sm hover:shadow-xl transition-all relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 bg-purple-600 text-white text-[10px] px-3 py-1 rounded-bl-xl font-bold shadow-md">PREMIUM</div>
+                    <h3 class="font-bold text-xl text-slate-800 mt-2 mb-2">${f.name}</h3>
+                    <p class="text-xs text-slate-500 mb-6 leading-relaxed">قالب استاندارد و آماده تولید. شامل لیست کامل مواد و ضرایب مصرف.</p>
+                    <button onclick="copyTemplate('${f.$id}')" class="w-full py-3 rounded-xl font-bold bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-600 hover:text-white transition-colors flex justify-center items-center gap-2">
+                        <span>📥</span> افزودن به لیست من
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        async function copyTemplate(id) {
+            if(!confirm("آیا می‌خواهید این محصول به لیست شخصی شما اضافه شود؟")) return;
+            const template = state.publicFormulas.find(f => f.$id === id);
+            if(!template) return;
+
+            try {
+                const res = await db.createDocument(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.FORMS, ID.unique(), {
+                    name: template.name + ' (کپی)',
+                    components_json: template.components_json,
+                    labor: template.labor, overhead: template.overhead, profit: template.profit,
+                    is_public: false
                 });
-            };
+                // کپی موفق
+                switchTab('formulas');
+                await loadAllData();
+                selectFormula(res.$id);
+                alert('محصول با موفقیت به لیست شما اضافه شد ✅');
+            } catch(e) { alert(e.message); }
+        }
 
-            getPrintItems(id);
+        // ==========================================
+        // 8. PRINT
+        // ==========================================
+        function printFormula(id) {
+            const f = state.formulas.find(x => x.$id === id);
+            const calc = calculateCost(f);
+            const comps = JSON.parse(f.components_json || '[]');
+
+            document.getElementById('print-title').innerText = f.name;
+            document.getElementById('print-id').innerText = f.$id.substring(0, 8).toUpperCase();
+            document.getElementById('print-date').innerText = new Date().toLocaleDateString('fa-IR');
+
+            let rows = '';
+            comps.forEach(c => {
+                let name, unit, q = c.qty;
+                if(c.type === 'mat') {
+                    const m = state.materials.find(x => x.$id === c.id);
+                    if(m) { name=m.name; unit=m.unit; }
+                } else {
+                    const sub = state.formulas.find(x => x.$id === c.id);
+                    if(sub) { name=`${sub.name} (پیش‌ساخته)`; unit='عدد'; }
+                }
+                if(name) rows += `
+                    <tr class="border-b border-slate-200 last:border-0">
+                        <td class="p-4 text-right">${name}</td>
+                        <td class="p-4 text-center font-mono">${q}</td>
+                        <td class="p-4 text-center text-slate-500">${unit}</td>
+                    </tr>`;
+            });
+            document.getElementById('print-rows').innerHTML = rows;
             
-            document.getElementById('print-rows').innerHTML = rowsHtml;
-            document.getElementById('print-total').textContent = formatPrice(calc.final);
-            const tax = Math.round(calc.final * 0.10);
-            document.getElementById('print-tax').textContent = formatPrice(tax);
-            document.getElementById('print-final').textContent = formatPrice(calc.final + tax);
+            document.getElementById('print-base').innerText = formatPrice(calc.matCost);
+            document.getElementById('print-extra').innerText = formatPrice(calc.sub - calc.matCost + calc.profit);
+            document.getElementById('print-final').innerText = formatPrice(calc.final);
 
             document.getElementById('print-modal').classList.remove('hidden');
             document.getElementById('print-modal').classList.add('flex');
-        };
+        }
 
-        window.closeModal = (id) => {
+        function closeModal(id) {
             document.getElementById(id).classList.add('hidden');
             document.getElementById(id).classList.remove('flex');
-        };
+        }
 
-        // ------------------------------------------------------------------
-        // 8. UI UTILS
-        // ------------------------------------------------------------------
-        window.switchTab = (tab) => {
-            document.querySelectorAll('[id^="tab-"]').forEach(el => {
-                 if(!el.classList.contains('tab-btn')) el.classList.add('hidden'); 
+        // ==========================================
+        // 9. UTILS
+        // ==========================================
+        function switchTab(tab) {
+            ['formulas', 'materials', 'categories', 'store'].forEach(t => {
+                const el = document.getElementById('tab-'+t);
+                const btn = document.getElementById('btn-'+t);
+                if(el) el.classList.add('hidden');
+                if(btn) btn.classList.remove('active'); // Store tab doesn't have nav btn sometimes
             });
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            
-            document.getElementById('tab-' + tab).classList.remove('hidden');
-            document.getElementById('btn-' + tab).classList.add('active');
-        };
+            document.getElementById('tab-'+tab).classList.remove('hidden');
+            const activeBtn = document.getElementById('btn-'+tab);
+            if(activeBtn) activeBtn.classList.add('active');
+        }
 
-        window.formatInput = (el) => {
-            const val = el.value.replace(/[^0-9.]/g, '');
-            if(val) el.value = parseFloat(val).toLocaleString();
-        };
+        function formatInput(el) {
+            const v = el.value.replace(/[^0-9.]/g, '');
+            if(v) el.value = parseFloat(v).toLocaleString();
+        }
 
-        // Start App
+        // Start
         init();
     </script>
 </body>
