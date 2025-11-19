@@ -12,8 +12,11 @@ export function setupMaterials(refreshCallback) {
     document.getElementById('btn-add-relation').onclick = addRelationRow;
     
     // تریگرها
-    document.getElementById('mat-base-unit-select').onchange = updateUnitDropdowns;
-    document.getElementById('mat-scraper-unit').onchange = calculateScraperFactor;
+    const baseUnitSelect = document.getElementById('mat-base-unit-select');
+    if(baseUnitSelect) baseUnitSelect.onchange = updateUnitDropdowns;
+    
+    const scraperUnit = document.getElementById('mat-scraper-unit');
+    if(scraperUnit) scraperUnit.onchange = calculateScraperFactor;
     
     const scraperBtn = document.getElementById('btn-scraper-trigger');
     if(scraperBtn) scraperBtn.onclick = async () => {
@@ -28,8 +31,11 @@ export function setupMaterials(refreshCallback) {
 
 function renderRelationsUI() {
     const container = document.getElementById('unit-relations-container');
+    if(!container) return;
     container.innerHTML = '';
-    const baseUnitName = document.getElementById('mat-base-unit-select').value || 'واحد پایه';
+    
+    const baseElem = document.getElementById('mat-base-unit-select');
+    const baseUnitName = baseElem ? (baseElem.value || 'واحد پایه') : 'واحد پایه';
     
     currentUnitRelations.forEach((rel, index) => {
         const options = state.units.map(u => `<option value="${u.name}" ${u.name === rel.name ? 'selected' : ''}>${u.name}</option>`).join('');
@@ -84,7 +90,10 @@ function addRelationRow() {
 }
 
 function updateUnitDropdowns() {
-    const baseUnit = document.getElementById('mat-base-unit-select').value;
+    const baseElem = document.getElementById('mat-base-unit-select');
+    if(!baseElem) return;
+    
+    const baseUnit = baseElem.value;
     let availableUnits = [baseUnit];
     currentUnitRelations.forEach(r => availableUnits.push(r.name));
     availableUnits = [...new Set(availableUnits)];
@@ -94,14 +103,16 @@ function updateUnitDropdowns() {
     const priceSelect = document.getElementById('mat-price-unit');
     const scraperSelect = document.getElementById('mat-scraper-unit');
     
-    const prevPrice = priceSelect.value;
-    const prevScraper = scraperSelect.value;
-    
-    priceSelect.innerHTML = optionsHtml;
-    scraperSelect.innerHTML = optionsHtml;
-    
-    if(availableUnits.includes(prevPrice)) priceSelect.value = prevPrice;
-    if(availableUnits.includes(prevScraper)) scraperSelect.value = prevScraper;
+    if(priceSelect && scraperSelect) {
+        const prevPrice = priceSelect.value;
+        const prevScraper = scraperSelect.value;
+        
+        priceSelect.innerHTML = optionsHtml;
+        scraperSelect.innerHTML = optionsHtml;
+        
+        if(availableUnits.includes(prevPrice)) priceSelect.value = prevPrice;
+        if(availableUnits.includes(prevScraper)) scraperSelect.value = prevScraper;
+    }
     
     document.querySelectorAll('.base-unit-label').forEach(el => el.innerText = baseUnit);
     calculateScraperFactor();
@@ -109,7 +120,8 @@ function updateUnitDropdowns() {
 
 function calculateScraperFactor() {
     // محاسبات سمت کلاینت برای اسکرپر فقط نمایشی است چون بک‌اند کار اصلی را می‌کند
-    document.getElementById('mat-scraper-factor').value = 1; 
+    const el = document.getElementById('mat-scraper-factor');
+    if(el) el.value = 1; 
 }
 
 // --- CRUD ---
@@ -145,11 +157,13 @@ async function saveMaterial(cb) {
 
 export function renderMaterials(filter='') {
     const baseSelect = document.getElementById('mat-base-unit-select');
-    if(state.units.length > 0 && baseSelect.options.length === 0) {
+    if(baseSelect && state.units.length > 0 && baseSelect.options.length === 0) {
         baseSelect.innerHTML = state.units.map(u => `<option value="${u.name}">${u.name}</option>`).join('');
     }
 
-    const sort = document.getElementById('sort-materials').value;
+    const sortElem = document.getElementById('sort-materials');
+    const sort = sortElem ? sortElem.value : 'update_desc';
+    
     let list = state.materials.filter(m => m.name.includes(filter) || (m.display_name && m.display_name.includes(filter)));
     
     // --- منطق مرتب‌سازی کامل ---
@@ -163,6 +177,8 @@ export function renderMaterials(filter='') {
     });
     
     const el = document.getElementById('materials-container');
+    if(!el) return;
+
     if(!list.length) { el.innerHTML='<p class="col-span-full text-center text-slate-400 text-xs">خالی</p>'; return; }
     
     el.innerHTML = list.map(m => {
@@ -171,11 +187,15 @@ export function renderMaterials(filter='') {
         try { rels = JSON.parse(m.unit_relations || '{}'); } catch(e){}
         
         const priceUnit = rels.price_unit || m.purchase_unit || 'واحد';
+        const dateBadge = getDateBadge(m.$updatedAt);
 
         return `
         <div class="bg-white p-3 rounded-xl border border-slate-100 group relative hover:border-teal-400 transition-colors shadow-sm">
-            <div class="flex justify-between mb-1">
-                <span class="text-[10px] bg-slate-50 px-2 rounded text-slate-500 border border-slate-100">${cat}</span>
+            <div class="flex justify-between mb-1 items-start">
+                <div class="flex flex-col gap-1">
+                    <span class="text-[10px] bg-slate-50 px-2 rounded text-slate-500 border border-slate-100 w-fit">${cat}</span>
+                    ${dateBadge}
+                </div>
                 <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button class="text-amber-500 px-1 btn-edit-mat" data-id="${m.$id}">✎</button>
                     <button class="text-rose-500 px-1 btn-del-mat" data-id="${m.$id}">×</button>
@@ -229,7 +249,7 @@ function editMat(id) {
     document.getElementById('mat-scraper-url').value = m.scraper_url || '';
     
     const btn = document.getElementById('mat-submit-btn');
-    btn.innerText = 'ذخیره تغییرات';
+    if(btn) btn.innerText = 'ذخیره تغییرات';
     document.getElementById('mat-cancel-btn').classList.remove('hidden');
     
     if(window.innerWidth < 768) document.getElementById('tab-materials').scrollIntoView({behavior:'smooth'});
@@ -242,9 +262,6 @@ function resetMatForm() {
     renderRelationsUI();
     updateUnitDropdowns();
     const btn = document.getElementById('mat-submit-btn');
-    btn.innerText = 'ذخیره کالا';
+    if(btn) btn.innerText = 'ذخیره کالا';
     document.getElementById('mat-cancel-btn').classList.add('hidden');
 }
-```
-
-با این تغییرات، هم قابلیت مرتب‌سازی برگشت و هم فرم تعریف واحدها جمع‌وجور و حرفه‌ای شد.
