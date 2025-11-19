@@ -24,7 +24,7 @@ export function setupMaterials(refreshCallback) {
     };
 }
 
-// --- UI مدیریت واحدها ---
+// --- UI مدیریت واحدها (بازطراحی شده برای ظاهر تمیزتر) ---
 
 function renderRelationsUI() {
     const container = document.getElementById('unit-relations-container');
@@ -33,15 +33,23 @@ function renderRelationsUI() {
     
     currentUnitRelations.forEach((rel, index) => {
         const options = state.units.map(u => `<option value="${u.name}" ${u.name === rel.name ? 'selected' : ''}>${u.name}</option>`).join('');
+        
         const row = document.createElement('div');
-        row.className = 'flex items-center gap-1 bg-white p-2 rounded border border-slate-100 mb-1 shadow-sm';
+        // ظاهر جدید: ساده، فلت، رنگ‌های خنثی
+        row.className = 'flex items-center gap-2 bg-white p-2 rounded border border-slate-200 mb-1';
+        
         row.innerHTML = `
-            <input type="number" step="any" class="input-field h-7 w-12 text-center font-bold text-blue-600 px-0.5 text-xs rel-qty-unit" value="${rel.qtyUnit || 1}">
-            <select class="input-field h-7 w-20 px-1 text-xs rel-name-select border-none bg-transparent font-bold">${options}</select>
-            <span class="text-slate-400 mx-1">=</span>
-            <input type="number" step="any" class="input-field h-7 w-12 text-center font-bold text-slate-600 px-0.5 text-xs rel-qty-base" value="${rel.qtyBase || 1}">
+            <input type="number" step="any" class="input-field h-8 w-14 text-center font-bold text-slate-700 text-xs border-slate-200 bg-slate-50 rel-qty-unit" value="${rel.qtyUnit || 1}">
+            
+            <select class="input-field h-8 w-24 px-1 text-xs rel-name-select border-slate-200 bg-white text-slate-700">${options}</select>
+            
+            <span class="text-slate-400 text-[10px]">=</span>
+            
+            <input type="number" step="any" class="input-field h-8 w-14 text-center font-bold text-slate-500 text-xs border-slate-200 bg-slate-50 rel-qty-base" value="${rel.qtyBase || 1}">
+            
             <span class="text-slate-400 text-[10px] w-12 truncate base-unit-label">${baseUnitName}</span>
-            <button type="button" class="text-rose-400 hover:text-rose-600 px-2 btn-remove-rel">×</button>
+            
+            <button type="button" class="text-slate-300 hover:text-rose-500 px-1 text-sm mr-auto transition-colors btn-remove-rel">🗑</button>
         `;
         
         const updateRow = () => {
@@ -61,6 +69,8 @@ function renderRelationsUI() {
         };
         container.appendChild(row);
     });
+    
+    // آپدیت نام واحد پایه در تمام سطرها
     document.querySelectorAll('.base-unit-label').forEach(el => el.innerText = baseUnitName);
 }
 
@@ -81,7 +91,6 @@ function updateUnitDropdowns() {
 
     const optionsHtml = availableUnits.map(u => `<option value="${u}">${u}</option>`).join('');
     
-    // آپدیت دراپ‌داون واحد قیمت و اسکرپر
     const priceSelect = document.getElementById('mat-price-unit');
     const scraperSelect = document.getElementById('mat-scraper-unit');
     
@@ -98,25 +107,8 @@ function updateUnitDropdowns() {
     calculateScraperFactor();
 }
 
-// تابع کمکی برای گرفتن ضریب تبدیل هر واحد نسبت به پایه
-function getFactorToBase(unitName) {
-    const baseUnit = document.getElementById('mat-base-unit-select').value;
-    if (unitName === baseUnit) return 1;
-    const rel = currentUnitRelations.find(r => r.name === unitName);
-    if (!rel) return 1;
-    return rel.qtyBase / rel.qtyUnit;
-}
-
 function calculateScraperFactor() {
-    const sUnit = document.getElementById('mat-scraper-unit').value;
-    // برای اسکرپر، ما میخواهیم همه چیز را به "واحد پایه" برگردانیم
-    // چون در سیستم ما قیمت بر اساس "واحد قیمت" ذخیره میشود
-    // این فیلد scraper_factor فقط برای بک‌اند استفاده می‌شود که ضرب نهایی را انجام دهد.
-    // برای سادگی: ضریب اسکرپر = (1 / ضریب واحد سایت به پایه).
-    // اما چون بک‌اند قیمت را میگیرد و ضرب میکند، ما اینجا فقط ضریب واحد سایت به پایه را حساب میکنیم.
-    
-    // در واقعیت، ما در Formulas.js محاسبات دقیق را انجام می‌دهیم.
-    // اینجا فقط یک عدد تقریبی برای نمایش میگذاریم.
+    // محاسبات سمت کلاینت برای اسکرپر فقط نمایشی است چون بک‌اند کار اصلی را می‌کند
     document.getElementById('mat-scraper-factor').value = 1; 
 }
 
@@ -131,14 +123,14 @@ async function saveMaterial(cb) {
         category_id: document.getElementById('mat-category').value || null,
         price: parseLocaleNumber(document.getElementById('mat-price').value),
         scraper_url: document.getElementById('mat-scraper-url').value || null,
-        // فیلدهای قدیمی را با مقادیر پیش‌فرض پر می‌کنیم چون دیگر در UI نیستند
+        // مقادیر پیش‌فرض برای فیلدهای منسوخ شده (جهت سازگاری با دیتابیس)
         purchase_unit: document.getElementById('mat-price-unit').value, 
         consumption_unit: document.getElementById('mat-price-unit').value, 
         scraper_factor: 1,
         unit_relations: JSON.stringify({
             base: document.getElementById('mat-base-unit-select').value,
             others: currentUnitRelations,
-            price_unit: document.getElementById('mat-price-unit').value, // واحد قیمت مهم است
+            price_unit: document.getElementById('mat-price-unit').value,
             scraper_unit: document.getElementById('mat-scraper-unit').value
         })
     };
@@ -160,9 +152,14 @@ export function renderMaterials(filter='') {
     const sort = document.getElementById('sort-materials').value;
     let list = state.materials.filter(m => m.name.includes(filter) || (m.display_name && m.display_name.includes(filter)));
     
+    // --- منطق مرتب‌سازی کامل ---
     list.sort((a,b) => {
-        if(sort === 'update_desc') return new Date(b.$updatedAt) - new Date(a.$updatedAt);
-        return 0;
+        if(sort === 'price_desc') return b.price - a.price;
+        if(sort === 'price_asc') return a.price - b.price;
+        if(sort === 'name_asc') return a.name.localeCompare(b.name);
+        if(sort === 'update_asc') return new Date(a.$updatedAt) - new Date(b.$updatedAt);
+        // پیش‌فرض: جدیدترین اول (update_desc)
+        return new Date(b.$updatedAt) - new Date(a.$updatedAt);
     });
     
     const el = document.getElementById('materials-container');
@@ -248,3 +245,6 @@ function resetMatForm() {
     btn.innerText = 'ذخیره کالا';
     document.getElementById('mat-cancel-btn').classList.add('hidden');
 }
+```
+
+با این تغییرات، هم قابلیت مرتب‌سازی برگشت و هم فرم تعریف واحدها جمع‌وجور و حرفه‌ای شد.
