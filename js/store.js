@@ -2,7 +2,9 @@ import { api } from './api.js';
 import { state, APPWRITE_CONFIG } from './config.js';
 import { switchTab } from './utils.js';
 
-export function setupStore(refreshCallback) { }
+export function setupStore(refreshCallback) {
+    // Store setup mostly happens in render
+}
 
 export function renderStore(refreshCallback) {
     const el = document.getElementById('store-container');

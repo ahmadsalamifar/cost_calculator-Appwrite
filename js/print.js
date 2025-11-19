@@ -1,13 +1,15 @@
 import { state } from './config.js';
-import { calculateCost } from './formulas.js';
+import { calculateCost } from './formulas.js'; // توجه: calculateCost باید اکسپورت شده باشد
 import { formatPrice, formatDate, openModal, closeModal } from './utils.js';
 
 export function setupPrint() {
-    document.getElementById('btn-print').onclick = printFormula;
-    document.getElementById('btn-close-print').onclick = () => closeModal('print-modal');
+    // دکمه کلوز همیشه کار کند
+    const btn = document.getElementById('btn-close-print');
+    if(btn) btn.onclick = () => closeModal('print-modal');
 }
 
-function printFormula() {
+// این تابع باید export شود تا در formulas.js قابل استفاده باشد
+export function printFormula() {
     if(!state.activeFormulaId) return;
     const f = state.formulas.find(x => x.$id === state.activeFormulaId);
     const calc = calculateCost(f);

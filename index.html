@@ -4,126 +4,85 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>سامانه جامع سیمرغ گستر پویا</title>
-    
-    <!-- کتابخانه‌های خارجی -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
-    
-    <!-- فایل استایل جداگانه -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <!-- Loading Screen -->
+    <!-- Loading -->
     <div id="loading-screen">
         <div class="spinner"></div>
         <h2 class="text-xl font-bold mb-2">سیمرغ گستر پویا</h2>
         <p class="text-xs text-slate-400" id="loading-text">در حال اتصال...</p>
     </div>
 
-    <!-- Main App Content -->
+    <!-- Main App -->
     <div id="app-content" class="hidden">
-        
-        <!-- Header -->
         <header class="app-header">
-            <div>
-                <h1 class="text-xl md:text-2xl font-black text-slate-800">
-                    ماشین حساب <span class="text-teal-600">سیمرغ</span>
-                </h1>
-            </div>
+            <div><h1 class="text-xl md:text-2xl font-black text-slate-800">ماشین حساب <span class="text-teal-600">سیمرغ</span></h1></div>
             <div class="flex items-center gap-2">
-                <div class="status-badge">
-                    <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> متصل
-                </div>
-                <button id="btn-open-store" class="btn btn-secondary text-xs px-3" type="button">
-                    🏦 بانک فرمول
-                </button>
+                <div class="status-badge"><span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> متصل</div>
+                <button id="btn-open-store" class="btn btn-secondary text-xs px-3" type="button">🏦 بانک فرمول</button>
             </div>
         </header>
 
-        <!-- Navigation Tabs -->
         <nav class="nav-tabs">
             <button class="tab-btn active" id="btn-tab-formulas" type="button">📋 محصولات</button>
             <button class="tab-btn" id="btn-tab-materials" type="button">📦 انبار مواد</button>
             <button class="tab-btn" id="btn-tab-categories" type="button">📂 دسته‌ها</button>
         </nav>
 
-        <!-- TAB 1: FORMULAS (محصولات) -->
+        <!-- TAB: FORMULAS -->
         <div id="tab-formulas">
             <div class="flex flex-col lg:flex-row gap-4 h-auto lg:h-[calc(100vh-220px)] min-h-[600px]">
-                
-                <!-- List Sidebar -->
                 <div class="w-full lg:w-1/3 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden h-[300px] lg:h-full shrink-0">
                     <div class="p-3 border-b border-slate-100 flex gap-2 bg-slate-50 items-center sticky top-0 z-10">
                         <input type="text" id="search-formulas" placeholder="جستجو..." class="input-field text-xs h-10">
-                        <button id="btn-open-new-formula" class="bg-teal-600 text-white w-10 h-10 rounded-xl font-bold shadow text-xl hover:bg-teal-700 transition-colors" type="button" title="محصول جدید">+</button>
+                        <button id="btn-open-new-formula" class="bg-teal-600 text-white w-10 h-10 rounded-xl font-bold shadow text-xl hover:bg-teal-700" type="button">+</button>
                     </div>
-                    <div id="formula-master-list" class="flex-1 overflow-y-auto p-0 custom-scrollbar bg-white">
-                        <p class="text-center text-slate-400 text-xs mt-10">لیست در حال بارگذاری...</p>
-                    </div>
+                    <div id="formula-master-list" class="flex-1 overflow-y-auto p-2 space-y-1 custom-scrollbar"></div>
                 </div>
-
-                <!-- Detail Panel -->
                 <div class="w-full lg:w-2/3 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col relative min-h-[500px]" id="detail-panel">
-                    
-                    <!-- Empty State -->
                     <div id="formula-detail-empty" class="absolute inset-0 flex flex-col items-center justify-center text-slate-300 bg-white z-10 p-4 text-center">
                         <span class="text-5xl mb-4 opacity-20">🏗️</span>
                         <p class="text-sm font-bold text-slate-400">محصولی انتخاب نشده است</p>
                     </div>
-
-                    <!-- Detail View -->
-                    <div id="formula-detail-view" class="hidden flex-col h-full bg-white">
-                        
-                        <!-- Header with Buttons -->
-                        <div class="p-4 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center bg-slate-50 gap-3">
-                            <!-- نام فرمول توسط JS اینجا ساخته می‌شود -->
+                    <div id="formula-detail-view" class="hidden flex-col h-full">
+                        <div class="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                            <div>
+                                <h2 id="active-formula-name" class="text-base font-bold text-slate-800 cursor-pointer truncate hover:text-teal-600 border-b border-dashed border-slate-300 pb-1" title="برای ویرایش نام کلیک کنید">---</h2>
+                                <span class="text-[10px] text-slate-400" id="active-formula-date"></span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button id="btn-print" class="btn btn-white border border-slate-200 text-slate-600 py-1.5 px-3 text-xs shadow-none" type="button">🖨</button>
+                                <button id="btn-delete-formula" class="btn btn-white border border-rose-200 text-rose-500 py-1.5 px-3 text-xs shadow-none" type="button">🗑</button>
+                            </div>
                         </div>
-
-                        <!-- Add Component Bar -->
                         <div class="p-3 border-b border-slate-100 bg-white shadow-sm z-20">
                             <form id="form-add-comp" class="flex flex-col md:flex-row gap-2 items-center">
                                 <div class="flex gap-2 w-full md:w-auto flex-grow">
-                                    <select id="comp-filter" class="input-field w-1/3 text-xs bg-slate-50 h-10 cursor-pointer">
-                                        <option value="">فیلتر...</option>
-                                    </select>
-                                    <select id="comp-select" class="input-field w-2/3 md:flex-grow text-xs h-10 cursor-pointer" required></select>
+                                    <select id="comp-filter" class="input-field w-1/3 text-xs bg-slate-50 h-10"><option value="">فیلتر...</option></select>
+                                    <select id="comp-select" class="input-field w-2/3 md:flex-grow text-xs h-10" required></select>
                                 </div>
                                 <div class="flex gap-2 w-full md:w-auto">
                                     <input type="number" id="comp-qty" step="any" placeholder="#" class="input-field w-full md:w-20 text-center font-bold h-10" required>
-                                    <button class="btn btn-primary w-12 rounded-xl shadow-md h-10 text-lg font-bold" type="submit">+</button>
+                                    <button class="btn btn-primary w-12 rounded-xl shadow-md h-10" type="submit">+</button>
                                 </div>
                             </form>
                         </div>
-
-                        <!-- Items List -->
                         <div class="flex-1 overflow-y-auto bg-slate-50/30 relative">
-                            <div id="formula-comps-list" class="divide-y divide-slate-100 pb-20 bg-white"></div>
+                            <div id="formula-comps-list" class="divide-y divide-slate-100 pb-20"></div>
                         </div>
-
-                        <!-- Footer Stats -->
                         <div class="p-4 bg-slate-800 text-slate-200 border-t border-slate-700 shadow-inner z-20 rounded-b-2xl md:rounded-none">
-                            <div class="grid grid-cols-3 gap-3 mb-3">
-                                <div>
-                                    <label class="text-[10px] text-slate-400 block mb-1 text-center">دستمزد</label>
-                                    <input id="inp-labor" class="w-full bg-slate-700 border border-slate-600 rounded p-2 text-center text-white text-sm focus:border-teal-500 transition-colors" inputmode="numeric">
-                                </div>
-                                <div>
-                                    <label class="text-[10px] text-slate-400 block mb-1 text-center">سربار</label>
-                                    <input id="inp-overhead" class="w-full bg-slate-700 border border-slate-600 rounded p-2 text-center text-white text-sm focus:border-teal-500 transition-colors" inputmode="numeric">
-                                </div>
-                                <div>
-                                    <label class="text-[10px] text-slate-400 block mb-1 text-center">سود %</label>
-                                    <input type="number" id="inp-profit" class="w-full bg-slate-700 border border-slate-600 rounded p-2 text-center text-white text-sm focus:border-teal-500 transition-colors">
-                                </div>
+                            <div class="grid grid-cols-3 gap-2 mb-3">
+                                <div><label class="text-[10px] text-slate-400 block mb-1 text-center">دستمزد</label><input id="inp-labor" class="w-full bg-slate-700 border border-slate-600 rounded p-2 text-center text-white text-sm"></div>
+                                <div><label class="text-[10px] text-slate-400 block mb-1 text-center">سربار</label><input id="inp-overhead" class="w-full bg-slate-700 border border-slate-600 rounded p-2 text-center text-white text-sm"></div>
+                                <div><label class="text-[10px] text-slate-400 block mb-1 text-center">سود %</label><input type="number" id="inp-profit" class="w-full bg-slate-700 border border-slate-600 rounded p-2 text-center text-white text-sm"></div>
                             </div>
                             <div class="flex justify-between items-end pt-3 border-t border-slate-700">
-                                <span class="text-xs text-slate-400 mb-1">قیمت تمام شده:</span>
-                                <div class="text-right">
-                                    <span id="lbl-final-price" class="text-3xl font-black text-teal-400 tracking-tight drop-shadow-sm">0</span>
-                                    <span class="text-[10px] text-slate-500 mr-1">تومان</span>
-                                </div>
+                                <span class="text-xs text-slate-400 mb-1">قیمت نهایی:</span>
+                                <div class="text-right"><span id="lbl-final-price" class="text-2xl font-black text-teal-400 tracking-tight">0</span> <span class="text-[10px] text-slate-500 mr-1">تومان</span></div>
                             </div>
                         </div>
                     </div>
@@ -131,36 +90,32 @@
             </div>
         </div>
 
-        <!-- TAB 2: MATERIALS (انبار) -->
+        <!-- TAB: MATERIALS -->
         <div id="tab-materials" class="hidden">
             <div class="flex flex-col md:flex-row gap-6">
-                <!-- Form -->
                 <div class="w-full md:w-1/3 order-2 md:order-1">
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 md:sticky md:top-20">
-                        <h3 class="font-bold text-slate-700 mb-3 border-b pb-2 text-sm flex items-center gap-2">
-                            <span class="text-lg">📦</span> افزودن / ویرایش کالا
-                        </h3>
+                        <h3 class="font-bold text-slate-700 mb-3 border-b pb-2 text-sm">افزودن / ویرایش کالا</h3>
                         <form id="material-form" class="space-y-3">
                             <input type="hidden" id="mat-id">
-                            <select id="mat-category" class="input-field bg-slate-50 text-xs cursor-pointer"><option value="">دسته‌بندی...</option></select>
+                            <select id="mat-category" class="input-field bg-slate-50 text-xs"><option value="">دسته‌بندی...</option></select>
                             <input type="text" id="mat-name" class="input-field text-xs" placeholder="نام کالا" required>
                             <div class="flex gap-2">
-                                <input type="text" id="mat-unit" class="input-field w-1/3 text-xs text-center" placeholder="واحد" required>
-                                <input type="text" id="mat-price" class="input-field flex-grow price-input text-xs text-teal-700 font-bold" placeholder="قیمت" required inputmode="numeric">
+                                <input type="text" id="mat-unit" class="input-field w-1/3 text-xs" placeholder="واحد" required>
+                                <input type="text" id="mat-price" class="input-field flex-grow price-input text-xs text-teal-700" placeholder="قیمت" required>
                             </div>
                             <div class="flex gap-2 pt-2">
-                                <button type="submit" id="mat-submit-btn" class="btn btn-primary flex-grow text-xs shadow-md">ذخیره کالا</button>
+                                <button type="submit" id="mat-submit-btn" class="btn btn-primary flex-grow text-xs">ذخیره کالا</button>
                                 <button type="button" id="mat-cancel-btn" class="btn btn-secondary hidden text-xs">لغو</button>
                             </div>
                         </form>
                     </div>
                 </div>
-                <!-- List -->
                 <div class="w-full md:w-2/3 order-1 md:order-2">
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 min-h-[500px]">
-                        <div class="flex gap-2 mb-4 flex-col sm:flex-row">
+                        <div class="flex gap-2 mb-4">
                             <input type="text" id="search-materials" placeholder="جستجو..." class="input-field pl-4 h-10 text-xs">
-                            <select id="sort-materials" class="input-field w-full sm:w-auto text-xs h-10 cursor-pointer">
+                            <select id="sort-materials" class="input-field w-auto text-xs h-10">
                                 <option value="update_desc">بروزرسانی (جدیدترین)</option>
                                 <option value="update_asc">بروزرسانی (قدیمی‌ترین)</option>
                                 <option value="name_asc">حروف الفبا</option>
@@ -168,130 +123,73 @@
                                 <option value="price_asc">قیمت (ارزان‌ترین)</option>
                             </select>
                         </div>
-                        <div id="materials-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <p class="col-span-full text-center text-slate-400 py-4">لیست خالی است</p>
-                        </div>
+                        <div id="materials-container" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 3: CATEGORIES -->
+        <!-- TAB: CATEGORIES -->
         <div id="tab-categories" class="hidden">
             <div class="max-w-md mx-auto bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mt-4">
-                <h3 class="font-bold text-slate-700 text-center mb-4">گروه‌بندی‌های انبار</h3>
+                <h3 class="font-bold text-slate-700 text-center mb-4">گروه‌بندی‌ها</h3>
                 <form id="category-form" class="flex gap-2 mb-4">
-                    <input type="text" id="cat-name" class="input-field" placeholder="نام گروه جدید..." required>
-                    <button class="btn btn-primary px-4 text-xl font-bold shadow-sm" type="submit">+</button>
+                    <input type="text" id="cat-name" class="input-field" placeholder="نام گروه..." required>
+                    <button class="btn btn-primary px-4" type="submit">+</button>
                 </form>
-                <div id="category-list" class="space-y-2 max-h-80 overflow-y-auto custom-scrollbar pr-1"></div>
+                <div id="category-list" class="space-y-2 max-h-80 overflow-y-auto"></div>
             </div>
         </div>
 
-        <!-- TAB 4: STORE -->
+        <!-- TAB: STORE -->
         <div id="tab-store" class="hidden">
-            <div id="store-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <p class="col-span-full text-center text-slate-400 py-10">در حال دریافت...</p>
-            </div>
+            <div id="store-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         </div>
     </div>
 
-    <!-- ===========================
-         MODALS
-         =========================== -->
-
-    <!-- 1. محصول جدید -->
+    <!-- MODALS -->
     <div id="new-formula-modal" class="modal-overlay hidden">
-        <div class="modal-content max-w-sm p-6 rounded-2xl shadow-2xl m-4 transform transition-all">
-            <h3 class="font-bold text-slate-800 mb-4 text-lg">محصول جدید</h3>
-            <input type="text" id="new-formula-name" class="input-field mb-6 text-center font-bold text-lg" placeholder="نام محصول..." autofocus>
+        <div class="modal-content max-w-sm p-6">
+            <h3 class="font-bold text-slate-800 mb-4">محصول جدید</h3>
+            <input type="text" id="new-formula-name" class="input-field mb-6 text-center font-bold" placeholder="نام محصول...">
             <div class="flex gap-3">
-                <button id="btn-create-formula" class="btn btn-primary flex-1 py-3 shadow-md" type="button">ایجاد</button>
-                <button id="btn-cancel-formula" class="btn btn-secondary flex-1 py-3" type="button">لغو</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 2. تغییر نام (جدید) -->
-    <div id="rename-modal" class="modal-overlay hidden">
-        <div class="modal-content max-w-sm p-6 rounded-2xl shadow-2xl transform transition-all">
-            <h3 class="font-bold text-slate-800 mb-4 text-lg text-center">ویرایش نام محصول</h3>
-            <input type="text" id="rename-input" class="input-field mb-6 text-center font-bold text-lg text-slate-700" placeholder="نام جدید...">
-            <div class="flex gap-3">
-                <button id="btn-save-rename" class="btn btn-primary flex-1 py-3 shadow-md active:scale-95 transition-transform" type="button">ذخیره تغییرات</button>
-                <button id="btn-cancel-rename" class="btn btn-secondary flex-1 py-3" type="button">انصراف</button>
+                <button id="btn-create-formula" class="btn btn-primary flex-1" type="button">ایجاد</button>
+                <button id="btn-cancel-formula" class="btn btn-secondary flex-1" type="button">لغو</button>
             </div>
         </div>
     </div>
 
-    <!-- 3. پرینت -->
     <div id="print-modal" class="modal-overlay hidden">
-        <div class="modal-content max-w-3xl h-full md:h-auto rounded-xl shadow-2xl overflow-hidden flex flex-col">
-            <div class="p-6 md:p-10 bg-white text-slate-900 overflow-y-auto flex-grow" id="print-area">
-                <!-- Print Header -->
-                <div class="flex justify-between border-b-4 border-slate-800 pb-6 mb-8">
-                    <div>
-                        <h1 class="text-2xl font-black text-slate-900">سیمرغ گستر پویا</h1>
-                        <p class="text-sm text-slate-500 mt-2 font-bold">پیش‌فاکتور فروش</p>
-                    </div>
-                    <div class="text-left">
-                        <div class="text-3xl font-black text-slate-200 tracking-tighter">INVOICE</div>
-                        <div class="text-sm font-mono text-slate-500 mt-1" id="print-date">---</div>
-                    </div>
+        <div class="modal-content max-w-3xl">
+            <div class="p-6 md:p-10 bg-white text-slate-900 max-h-[80vh] overflow-y-auto" id="print-area">
+                <div class="flex justify-between border-b-2 border-slate-800 pb-4 mb-6">
+                    <div><h1 class="text-xl font-black">سیمرغ گستر پویا</h1><p class="text-xs text-slate-500 mt-1">پیش‌فاکتور فروش</p></div>
+                    <div class="text-left"><div class="text-2xl font-black text-slate-200">INVOICE</div><div class="text-xs font-mono text-slate-400 mt-1" id="print-date">---</div></div>
                 </div>
-                
-                <!-- Product Info -->
-                <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 mb-8 flex justify-between items-center shadow-sm">
-                    <div>
-                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">شرح محصول</div>
-                        <div class="font-bold text-slate-800 text-lg" id="print-title">---</div>
-                    </div>
-                    <div class="text-left">
-                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">کد پیگیری</div>
-                        <div class="text-xs font-mono bg-white border border-slate-300 px-2 py-1 rounded text-slate-600" id="print-id">---</div>
-                    </div>
+                <div class="bg-slate-50 p-4 rounded border border-slate-200 mb-6 flex justify-between">
+                    <div><div class="text-[10px] text-slate-400 font-bold mb-1">شرح</div><div class="font-bold text-slate-800" id="print-title">---</div></div>
+                    <div class="text-left"><div class="text-[10px] text-slate-400 font-bold mb-1">کد</div><div class="text-xs font-mono bg-white border px-2 py-1 rounded" id="print-id">---</div></div>
                 </div>
-
-                <!-- Table -->
-                <table class="w-full text-sm mb-8 border-collapse">
-                    <thead>
-                        <tr class="border-b-2 border-slate-800 text-slate-700 text-xs uppercase">
-                            <th class="text-right py-3 font-bold">شرح کالا / خدمات</th>
-                            <th class="text-center py-3 w-20 font-bold">تعداد</th>
-                            <th class="text-center py-3 w-20 font-bold">واحد</th>
-                        </tr>
-                    </thead>
-                    <tbody id="print-rows" class="text-slate-600 text-sm font-medium divide-y divide-slate-100"></tbody>
+                <table class="w-full text-sm mb-6">
+                    <thead><tr class="border-b border-slate-800 text-slate-700 text-xs"><th class="text-right py-2">شرح</th><th class="text-center py-2 w-12">تعداد</th><th class="text-center py-2 w-16">واحد</th></tr></thead>
+                    <tbody id="print-rows" class="text-slate-600 text-xs md:text-sm"></tbody>
                 </table>
-
-                <!-- Footer Totals -->
-                <div class="flex justify-end text-sm mt-auto">
-                    <div class="w-full md:w-1/2 space-y-3">
-                        <div class="flex justify-between text-slate-500"><span>قیمت پایه (مواد+هزینه):</span><span class="font-mono font-bold text-slate-700" id="print-base">0</span></div>
-                        <div class="flex justify-between text-teal-700"><span>سود تولیدکننده:</span><span class="font-mono font-bold" id="print-profit">0</span></div>
-                        <div class="flex justify-between border-t border-slate-200 pt-2 font-bold text-slate-800"><span>جمع کل:</span><span class="font-mono" id="print-subtotal">0</span></div>
-                        <div class="flex justify-between text-amber-600"><span>مالیات بر ارزش افزوده (10%):</span><span class="font-mono font-bold" id="print-vat">0</span></div>
-                        
-                        <div class="bg-slate-800 text-white p-4 rounded-xl flex justify-between items-center mt-4 shadow-lg">
-                            <span class="font-bold text-slate-300">مبلغ قابل پرداخت:</span>
-                            <div class="text-right">
-                                <span class="font-mono font-black text-2xl text-white leading-none block" id="print-final">0</span>
-                                <span class="text-[10px] text-slate-400">تومان</span>
-                            </div>
-                        </div>
+                <div class="flex justify-end text-sm">
+                    <div class="w-full md:w-1/2 space-y-2">
+                        <div class="flex justify-between text-teal-700"><span>سود:</span><span class="font-mono font-bold" id="print-profit">0</span></div>
+                        <div class="flex justify-between border-t pt-1"><span>جمع:</span><span class="font-mono font-bold" id="print-subtotal">0</span></div>
+                        <div class="flex justify-between text-amber-600"><span>مالیات:</span><span class="font-mono font-bold" id="print-vat">0</span></div>
+                        <div class="bg-slate-800 text-white p-3 rounded flex justify-between mt-2"><span class="font-bold">پرداخت:</span><span class="font-mono font-bold text-lg" id="print-final">0</span></div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Modal Footer Buttons -->
-            <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-center gap-3 no-print shrink-0">
-                <button onclick="window.print()" class="btn btn-primary px-8 shadow-lg text-lg">🖨 چاپ / دانلود PDF</button>
-                <button id="btn-close-print" class="btn btn-secondary px-6" type="button">بستن</button>
+            <div class="bg-slate-50 p-4 border-t flex justify-center gap-3 no-print">
+                <button onclick="window.print()" class="btn btn-primary" type="button">چاپ</button>
+                <button id="btn-close-print" class="btn btn-secondary" type="button">بستن</button>
             </div>
         </div>
     </div>
 
-    <!-- اتصال فایل اصلی ماژولار -->
     <script type="module" src="js/main.js"></script>
 </body>
 </html>

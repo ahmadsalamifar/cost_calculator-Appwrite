@@ -9,14 +9,14 @@ const APPWRITE_CONFIG = {
     }
 };
 
-if (typeof Appwrite === 'undefined') alert("خطا: کتابخانه Appwrite لود نشد!");
+if (typeof Appwrite === 'undefined') console.error("Appwrite SDK Error");
 
 const { Client, Account, Databases, ID, Query } = Appwrite;
 const client = new Client().setEndpoint(APPWRITE_CONFIG.ENDPOINT).setProject(APPWRITE_CONFIG.PROJECT_ID);
 const account = new Account(client);
 const db = new Databases(client);
 
-// مخزن داده‌ها
+// این آبجکت نباید هرگز Re-assign شود
 const state = { 
     categories: [], 
     materials: [], 

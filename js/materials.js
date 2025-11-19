@@ -29,13 +29,13 @@ export function renderMaterials(filter='') {
     const sort = document.getElementById('sort-materials').value;
     let list = state.materials.filter(m => m.name.includes(filter));
     
-    // مرتب‌سازی پیشرفته
+    // منطق مرتب‌سازی پیشرفته
     list.sort((a,b) => {
         if(sort === 'update_desc') return new Date(b.$updatedAt) - new Date(a.$updatedAt);
         if(sort === 'update_asc') return new Date(a.$updatedAt) - new Date(b.$updatedAt);
         if(sort === 'price_desc') return b.price - a.price;
         if(sort === 'price_asc') return a.price - b.price;
-        return a.name.localeCompare(b.name);
+        return a.name.localeCompare(b.name); // default: name_asc
     });
     
     const el = document.getElementById('materials-container');
@@ -43,7 +43,7 @@ export function renderMaterials(filter='') {
     
     el.innerHTML = list.map(m => {
         const cat = state.categories.find(c => c.$id === m.category_id)?.name || '-';
-        const dateBadge = getDateBadge(m.$updatedAt);
+        const dateBadge = getDateBadge(m.$updatedAt); // دریافت بج تاریخ
         
         return `
         <div class="bg-white p-3 rounded-xl border border-slate-100 group relative hover:border-teal-400 transition-colors">
@@ -52,12 +52,9 @@ export function renderMaterials(filter='') {
                     <span class="text-[10px] bg-slate-50 px-1 rounded text-slate-400 border border-slate-100">${cat}</span>
                     ${dateBadge}
                 </div>
-                <div class="flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                    <button class="text-amber-500 px-1 btn-edit-mat" data-id="${m.$id}">✎</button>
-                    <button class="text-rose-500 px-1 btn-del-mat" data-id="${m.$id}">×</button>
-                </div>
+                <div class="flex gap-1"><button class="text-amber-500 px-1 btn-edit-mat" data-id="${m.$id}">✎</button><button class="text-rose-500 px-1 btn-del-mat" data-id="${m.$id}">×</button></div>
             </div>
-            <div class="font-bold text-xs text-slate-800 truncate mt-1 mb-1" title="${m.name}">${m.name}</div>
+            <div class="font-bold text-xs text-slate-800 truncate mt-2 mb-1">${m.name}</div>
             <div class="flex justify-between items-end">
                 <span class="text-[10px] text-slate-400">${m.unit}</span>
                 <span class="font-mono font-bold text-teal-700 text-base">${formatPrice(m.price)}</span>
@@ -68,7 +65,13 @@ export function renderMaterials(filter='') {
     el.querySelectorAll('.btn-edit-mat').forEach(b => b.onclick = () => editMat(b.dataset.id));
     el.querySelectorAll('.btn-del-mat').forEach(b => b.onclick = async () => {
         if(confirm('حذف؟')) {
-            try { await api.delete(APPWRITE_CONFIG.COLS.MATS, b.dataset.id); import('./api.js').then(m=>m.fetchAllData().then(renderMaterials)); } 
+            try { 
+                await api.delete(APPWRITE_CONFIG.COLS.MATS, b.dataset.id); 
+                // رفرش سریع فقط برای مواد (بدون درخواست کامل از سرور برای سرعت)
+                const idx = state.materials.findIndex(i => i.$id === b.dataset.id);
+                if(idx !== -1) state.materials.splice(idx, 1);
+                renderMaterials(filter);
+            }
             catch(e) { alert(e.message); }
         }
     });

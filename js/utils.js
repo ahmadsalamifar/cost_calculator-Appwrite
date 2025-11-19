@@ -13,9 +13,12 @@ export function getDateBadge(dateString) {
     const diffTime = Math.abs(new Date() - date);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    // سبز برای جدید (زیر ۷ روز)، نارنجی برای قدیمی
-    const color = diffDays < 7 ? 'text-emerald-600 bg-emerald-50 border-emerald-200' : 'text-orange-600 bg-orange-50 border-orange-200';
-    return `<span class="text-[10px] px-1.5 py-0.5 rounded border ${color}">${formatDate(dateString)}</span>`;
+    // زیر ۷ روز = سبز (جدید)، بیشتر = نارنجی (قدیمی)
+    const colorClass = diffDays < 7 
+        ? 'bg-emerald-100 text-emerald-700 border-emerald-200' 
+        : 'bg-orange-100 text-orange-700 border-orange-200';
+    
+    return `<span class="text-[10px] px-1.5 py-0.5 rounded border ${colorClass}">${formatDate(dateString)}</span>`;
 }
 
 export function formatInput(el) {
@@ -30,8 +33,10 @@ export function switchTab(id) {
         if (el) el.classList.add('hidden');
         if (btn) btn.classList.remove('active');
     });
-    document.getElementById('tab-' + id).classList.remove('hidden');
-    document.getElementById('btn-tab-' + id).classList.add('active');
+    const target = document.getElementById('tab-' + id);
+    const targetBtn = document.getElementById('btn-tab-' + id);
+    if (target) target.classList.remove('hidden');
+    if (targetBtn) targetBtn.classList.add('active');
 }
 
 export function openModal(id) {

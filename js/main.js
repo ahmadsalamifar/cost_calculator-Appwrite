@@ -7,8 +7,9 @@ import * as Categories from './categories.js';
 import * as Store from './store.js';
 import * as Print from './print.js';
 
+// تابع رفرش کلی
 async function refreshApp() {
-    console.log("🔄 Refreshing...");
+    console.log("🔄 Refreshing App Data...");
     await fetchAllData();
     updateUI();
 }
@@ -19,25 +20,26 @@ function updateUI() {
     Categories.renderCategories(refreshApp);
     Store.renderStore(refreshApp);
     
-    // اطمینان از رندر شدن فرمول فعال
+    // اگر فرمولی باز است، دوباره آن را پیدا و رندر کن
     if (state.activeFormulaId) {
         const f = state.formulas.find(x => x.$id === state.activeFormulaId);
         if (f) {
+            // پاس دادن refreshApp بسیار مهم است برای دکمه‌ها
             Formulas.renderFormulaDetail(f, refreshApp);
         } else {
+            // فرمول حذف شده
             state.activeFormulaId = null;
             document.getElementById('formula-detail-view').classList.add('hidden');
             document.getElementById('formula-detail-empty').classList.remove('hidden');
         }
     }
     
-    // اطمینان از پر بودن دراپ‌داون
     Formulas.updateDropdowns();
     Formulas.updateCompSelect();
 
-    // دراپ‌داون مواد اولیه
+    // فیلتر انبار
     const matCat = document.getElementById('mat-category');
-    if(matCat && state.categories.length > 0) {
+    if(matCat) {
         const val = matCat.value;
         const c = state.categories.map(x => `<option value="${x.$id}">${x.name}</option>`).join('');
         matCat.innerHTML = '<option value="">بدون دسته</option>' + c;
@@ -53,13 +55,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('loading-screen').classList.add('hidden');
         document.getElementById('app-content').classList.remove('hidden');
         
-        // Tabs
         document.getElementById('btn-tab-formulas').onclick = () => switchTab('formulas');
         document.getElementById('btn-tab-materials').onclick = () => switchTab('materials');
         document.getElementById('btn-tab-categories').onclick = () => switchTab('categories');
         document.getElementById('btn-open-store').onclick = () => switchTab('store');
         
-        // Modules
+        // *** انتقال تابع رفرش به ماژول‌ها ***
         Formulas.setupFormulas(refreshApp);
         Materials.setupMaterials(refreshApp);
         Categories.setupCategories(refreshApp);
@@ -70,7 +71,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             el.addEventListener('input', () => formatInput(el));
         });
 
-        // First Render
         updateUI();
         switchTab('formulas');
         
