@@ -10,7 +10,7 @@ export const APPWRITE_CONFIG = {
         UNITS: 'units' // <--- کالکشن جدید
     },
     FUNCTIONS: {
-        SCRAPER: '65a1234567890abcdef'
+        SCRAPER: '691dc278002eafe2ac0c'
     }
 };
 
