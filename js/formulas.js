@@ -74,21 +74,19 @@ export function renderFormulaDetail(f, refreshCallback) {
                     name = m.display_name || m.name;
                     unitName = c.unit || 'واحد';
                     
-                    // محاسبه مالیات در لحظه نمایش
                     let baseMatPrice = m.price;
+                    // اگر کالا مالیات داشته باشد، در نمایش جزئیات هم ۱۰٪ اضافه شده نشان داده می‌شود
                     if(m.has_tax) {
-                        baseMatPrice = baseMatPrice * 1.10; // +10%
+                        baseMatPrice = baseMatPrice * 1.10;
                         taxBadge = '<span class="text-[9px] text-rose-500 bg-rose-50 px-1 rounded ml-1">+۱۰٪</span>';
                     }
 
                     try {
                         const rels = JSON.parse(m.unit_relations || '{}');
                         const priceUnit = rels.price_unit || m.purchase_unit;
-                        
                         const priceFactor = getUnitFactor(m, priceUnit);
                         const basePrice = baseMatPrice / priceFactor;
                         const selectedUnitFactor = getUnitFactor(m, unitName);
-                        
                         price = basePrice * selectedUnitFactor;
                     } catch(e) { price = baseMatPrice; }
                 } else { name = '(حذف شده)'; }
@@ -143,11 +141,11 @@ export function calculateCost(f) {
             const m = state.materials.find(x => x.$id === c.id);
             if(m) {
                 let currentPrice = m.price;
+                // محاسبه مالیات در جمع کل
                 if(m.has_tax) currentPrice *= 1.10;
 
                 const rels = JSON.parse(m.unit_relations || '{}');
                 const priceUnit = rels.price_unit || m.purchase_unit;
-                
                 const priceFactor = getUnitFactor(m, priceUnit);
                 const selectedFactor = getUnitFactor(m, c.unit);
                 

@@ -6,10 +6,33 @@ let currentUnitRelations = [];
 
 export function setupMaterials(refreshCallback) {
     document.getElementById('material-form').onsubmit = (e) => { e.preventDefault(); saveMaterial(refreshCallback); };
-    document.getElementById('mat-cancel-btn').onclick = resetMatForm;
-    document.getElementById('search-materials').oninput = (e) => renderMaterials(e.target.value);
-    document.getElementById('sort-materials').onchange = () => renderMaterials();
-    document.getElementById('btn-add-relation').onclick = addRelationRow;
+    
+    const cancelBtn = document.getElementById('mat-cancel-btn');
+    if(cancelBtn) cancelBtn.onclick = resetMatForm;
+
+    const searchInp = document.getElementById('search-materials');
+    if(searchInp) searchInp.oninput = (e) => renderMaterials(e.target.value);
+
+    const sortSel = document.getElementById('sort-materials');
+    if(sortSel) sortSel.onchange = () => renderMaterials();
+
+    const addRelBtn = document.getElementById('btn-add-relation');
+    if(addRelBtn) addRelBtn.onclick = addRelationRow;
+    
+    // مدیریت فرمت قیمت (رفع مشکل پرش نشانگر)
+    const priceInput = document.getElementById('mat-price');
+    if(priceInput) {
+        // فقط موقع خارج شدن از فیلد فرمت کن
+        priceInput.onblur = (e) => {
+            const val = parseLocaleNumber(e.target.value);
+            if(val > 0) e.target.value = formatPrice(val);
+        };
+        // موقع فوکوس، فرمت را بردار تا راحت ویرایش شود
+        priceInput.onfocus = (e) => {
+            const val = parseLocaleNumber(e.target.value);
+            if(val > 0) e.target.value = val; 
+        };
+    }
     
     const baseUnitSelect = document.getElementById('mat-base-unit-select');
     if(baseUnitSelect) baseUnitSelect.onchange = updateUnitDropdowns;
@@ -118,7 +141,8 @@ function renderRelationsUI() {
         row.querySelector('.btn-remove-rel').onclick = () => { currentUnitRelations.splice(index, 1); renderRelationsUI(); updateUnitDropdowns(); };
         container.appendChild(row);
     });
-    document.querySelectorAll('.base-unit-label').forEach(el => el.innerText = baseUnitName);
+    const labels = document.querySelectorAll('.base-unit-label');
+    if(labels) labels.forEach(el => el.innerText = baseUnitName);
 }
 
 function addRelationRow() {
@@ -153,7 +177,8 @@ function updateUnitDropdowns() {
         if(availableUnits.includes(prevScraper)) scraperSelect.value = prevScraper;
     }
     
-    document.querySelectorAll('.base-unit-label').forEach(el => el.innerText = baseUnit);
+    const labels = document.querySelectorAll('.base-unit-label');
+    if(labels) labels.forEach(el => el.innerText = baseUnit);
     calculateScraperFactor();
 }
 
@@ -187,11 +212,12 @@ function calculateScraperFactor() {
 async function saveMaterial(cb) {
     const id = document.getElementById('mat-id').value;
     
-    // اطمینان از محاسبه ضریب قبل از ذخیره
     calculateScraperFactor();
     const scraperFactorVal = parseFloat(document.getElementById('mat-scraper-factor').value) || 1;
     const priceUnitVal = document.getElementById('mat-price-unit').value;
     
+    const hasTax = document.getElementById('mat-has-tax').checked;
+
     const data = {
         name: document.getElementById('mat-name').value,
         display_name: document.getElementById('mat-display-name').value || null,
@@ -200,16 +226,14 @@ async function saveMaterial(cb) {
         scraper_url: document.getElementById('mat-scraper-url').value || null,
         scraper_anchor: document.getElementById('mat-scraper-anchor').value || null,
         
-        // *** رفع خطای "Missing required attribute unit" ***
-        // این فیلد برای سازگاری با دیتابیس قدیمی اجباری است
         unit: priceUnitVal, 
         purchase_unit: priceUnitVal,
         consumption_unit: priceUnitVal, 
         
         scraper_factor: scraperFactorVal,
         
-        // فیلد جدید مالیات
-        has_tax: document.getElementById('mat-has-tax').checked,
+        // ذخیره درست وضعیت مالیات
+        has_tax: hasTax,
         
         unit_relations: JSON.stringify({
             base: document.getElementById('mat-base-unit-select').value,
@@ -262,14 +286,23 @@ export function renderMaterials(filter='') {
         const priceUnit = rels.price_unit || m.purchase_unit || 'واحد';
         const dateBadge = getDateBadge(m.$updatedAt);
         
-        // نمایش بج مالیات
-        const taxBadge = m.has_tax ? '<span class="text-[9px] bg-rose-50 text-rose-600 px-1 border border-rose-100 rounded" title="مشمول مالیات">+۱۰٪</span>' : '';
+        // برجسته‌سازی کالاهای دارای مالیات
+        let taxBadge = '';
+        let borderClass = 'border-slate-100'; // پیش‌فرض
+        let bgClass = 'bg-white';
+
+        if (m.has_tax) {
+            // تغییر رنگ و استایل برای کالاهای مالیات دار
+            taxBadge = '<span class="text-[10px] font-bold bg-rose-100 text-rose-600 px-2 py-0.5 rounded border border-rose-200 shadow-sm mr-1">٪ مالیات</span>';
+            borderClass = 'border-rose-200 ring-1 ring-rose-100'; // کادر قرمز ملایم
+            bgClass = 'bg-rose-50/30';
+        }
 
         return `
-        <div class="bg-white p-3 rounded-xl border border-slate-100 group relative hover:border-teal-400 transition-colors shadow-sm">
+        <div class="${bgClass} p-3 rounded-xl border ${borderClass} group relative hover:border-teal-400 transition-all shadow-sm">
             <div class="flex justify-between mb-1 items-start">
                 <div class="flex flex-col gap-1">
-                    <div class="flex gap-1">
+                    <div class="flex items-center">
                         <span class="text-[10px] bg-slate-50 px-2 rounded text-slate-500 border border-slate-100 w-fit">${cat}</span>
                         ${taxBadge}
                     </div>
@@ -303,6 +336,8 @@ function editMat(id) {
     document.getElementById('mat-name').value = m.name;
     document.getElementById('mat-display-name').value = m.display_name || '';
     document.getElementById('mat-category').value = m.category_id || '';
+    
+    // ست کردن چک‌باکس مالیات
     document.getElementById('mat-has-tax').checked = !!m.has_tax; 
     
     try {
