@@ -73,32 +73,31 @@ export function setupMaterials(refreshCallback) {
 
     // ---------------------------------------------------------
     // 3. اصلاح دکمه تست لینک (UI Fix)
-    // دکمه را از حالت Absolute خارج کرده و کنار اینپوت قرار می‌دهیم
+    // استفاده از Flexbox برای قرارگیری مرتب کنار اینپوت
     // ---------------------------------------------------------
     const urlInput = document.getElementById('mat-scraper-url');
     if(urlInput && !document.getElementById('btn-test-link')) {
-        // والد اینپوت را به Flex تغییر می‌دهیم تا کنار هم قرار بگیرند
-        const parent = urlInput.parentElement; // div.flex-col
+        // والد اینپوت را به Flex تغییر می‌دهیم
+        const parent = urlInput.parentElement; 
         
-        // یک کانتینر ردیفی برای اینپوت و دکمه می‌سازیم
+        // یک کانتینر ردیفی برای اینپوت و دکمه
         const rowWrapper = document.createElement('div');
         rowWrapper.className = "flex gap-2 items-center w-full";
         
-        // اینپوت را به داخل رپر جدید منتقل می‌کنیم
+        // جابجایی اینپوت به داخل رپر
         parent.insertBefore(rowWrapper, urlInput);
         rowWrapper.appendChild(urlInput);
         
-        // دکمه تست جدید
+        // دکمه تست
         const testBtn = document.createElement('button');
         testBtn.id = 'btn-test-link';
         testBtn.type = 'button';
-        testBtn.className = 'bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-3 rounded-lg h-10 text-xs font-bold shrink-0 transition-colors';
+        testBtn.className = 'bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-3 rounded-lg h-10 text-xs font-bold shrink-0 transition-colors whitespace-nowrap';
         testBtn.innerHTML = '⚡ تست';
-        testBtn.title = 'بررسی قیمت این لینک بدون ذخیره';
+        testBtn.title = 'بررسی قیمت بدون ذخیره';
         
         rowWrapper.appendChild(testBtn);
 
-        // لاجیک دکمه تست
         testBtn.onclick = async () => {
             const url = urlInput.value;
             const anchor = document.getElementById('mat-scraper-anchor').value;
@@ -115,12 +114,10 @@ export function setupMaterials(refreshCallback) {
                 if(res.success && res.data) {
                     document.getElementById('mat-price').value = formatPrice(res.data.final_price);
                     
-                    // افکت موفقیت روی فیلد قیمت
                     const pInput = document.getElementById('mat-price');
                     pInput.classList.add('bg-green-100', 'text-green-800');
                     setTimeout(() => pInput.classList.remove('bg-green-100', 'text-green-800'), 2000);
 
-                    // نمایش پیغام کوچک زیر دکمه
                     alert(`✅ قیمت یافت شد: ${formatPrice(res.data.final_price)} تومان`);
                 } else {
                     alert('❌ خطا: ' + (res.error || 'قیمت پیدا نشد'));
@@ -133,7 +130,7 @@ export function setupMaterials(refreshCallback) {
         };
     }
     
-    // مدیریت اینپوت قیمت (فرمت ۳ رقم)
+    // مدیریت فرمت قیمت
     const priceInput = document.getElementById('mat-price');
     if(priceInput) {
         const newPriceInput = priceInput.cloneNode(true);
@@ -152,7 +149,8 @@ export function setupMaterials(refreshCallback) {
     const baseUnitSelect = document.getElementById('mat-base-unit-select');
     if(baseUnitSelect) baseUnitSelect.onchange = updateUnitDropdowns;
     
-    ['mat-purchase-unit', 'mat-scraper-unit'].forEach(id => {
+    // اصلاح: استفاده از ID صحیح (mat-price-unit) برای لیسنرها
+    ['mat-price-unit', 'mat-scraper-unit'].forEach(id => {
         const el = document.getElementById(id);
         if(el) el.onchange = calculateScraperFactor;
     });
@@ -204,7 +202,6 @@ function updateUnitDropdowns() {
     const baseElem = document.getElementById('mat-base-unit-select');
     if(!baseElem) return;
     
-    // چک می‌کنیم اگر واحد پایه خالی است (مثلاً هنوز انتخابی نشده)، اولی را انتخاب کند
     if(!baseElem.value && baseElem.options.length > 0) {
         baseElem.selectedIndex = 0;
     }
@@ -216,12 +213,12 @@ function updateUnitDropdowns() {
     
     const optionsHtml = availableUnits.map(u => `<option value="${u}">${u}</option>`).join('');
     
-    ['mat-purchase-unit', 'mat-consumption-unit', 'mat-scraper-unit'].forEach(id => {
+    // FIX: استفاده از mat-price-unit به جای mat-purchase-unit که در HTML وجود ندارد
+    ['mat-price-unit', 'mat-consumption-unit', 'mat-scraper-unit'].forEach(id => {
         const el = document.getElementById(id);
         if(el) {
             const prev = el.value;
             el.innerHTML = optionsHtml;
-            // حفظ انتخاب قبلی اگر هنوز معتبر است
             if(availableUnits.includes(prev)) el.value = prev;
             else if(availableUnits.length > 0) el.value = availableUnits[0];
         }
@@ -240,7 +237,8 @@ function getFactorToBase(unitName) {
 
 function calculateScraperFactor() {
     const sSelect = document.getElementById('mat-scraper-unit');
-    const pSelect = document.getElementById('mat-purchase-unit');
+    // FIX: استفاده از mat-price-unit
+    const pSelect = document.getElementById('mat-price-unit');
     const factorInput = document.getElementById('mat-scraper-factor');
     if(!sSelect || !pSelect || !factorInput) return;
     
@@ -253,20 +251,17 @@ function calculateScraperFactor() {
 }
 
 // ---------------------------------------------------------
-// 4. رفع مشکل ذخیره (مدیریت واحد پایه گمشده)
+// 4. رفع مشکل ذخیره (مدیریت واحد پایه گمشده و ID صحیح)
 // ---------------------------------------------------------
 async function saveMaterial(cb) {
     const id = document.getElementById('mat-id').value;
     
-    // اطمینان از اینکه واحد پایه مقدار دارد
     const baseElem = document.getElementById('mat-base-unit-select');
     let baseUnitVal = baseElem.value;
-    if(!baseUnitVal) {
-        // اگر واحدی در دراپ‌داون نیست، "عدد" را اجباری کن
-        baseUnitVal = 'عدد';
-    }
+    if(!baseUnitVal) baseUnitVal = 'عدد';
 
-    let purchaseUnitVal = document.getElementById('mat-purchase-unit').value;
+    // FIX: گرفتن مقدار از mat-price-unit
+    let purchaseUnitVal = document.getElementById('mat-price-unit').value;
     if(!purchaseUnitVal) purchaseUnitVal = baseUnitVal;
 
     let consumptionUnitVal = document.getElementById('mat-consumption-unit') ? document.getElementById('mat-consumption-unit').value : purchaseUnitVal;
@@ -311,15 +306,10 @@ async function saveMaterial(cb) {
     }
 }
 
-// ---------------------------------------------------------
-// تابع رندر لیست متریال
-// ---------------------------------------------------------
 export function renderMaterials(filter='') {
-    // پر کردن اولیه دراپ‌داون واحد پایه
     const baseSelect = document.getElementById('mat-base-unit-select');
     if(baseSelect && state.units.length > 0 && baseSelect.options.length === 0) {
         baseSelect.innerHTML = state.units.map(u => `<option value="${u.name}">${u.name}</option>`).join('');
-        // اگر واحد پایه هنوز خالی است، اولی را انتخاب کن
         if(!baseSelect.value) baseSelect.selectedIndex = 0;
         updateUnitDropdowns(); 
     }
@@ -381,9 +371,6 @@ export function renderMaterials(filter='') {
     });
 }
 
-// ---------------------------------------------------------
-// 5. رفع مشکل نمایش در ادیت (اگر واحد حذف شده بود)
-// ---------------------------------------------------------
 function editMat(id) {
     const m = state.materials.find(x => x.$id === id);
     if(!m) return;
@@ -403,10 +390,8 @@ function editMat(id) {
         const rels = JSON.parse(m.unit_relations || '{}');
         const baseSelect = document.getElementById('mat-base-unit-select');
         
-        // مرحله 1: پر کردن لیست واحدها از state
         baseSelect.innerHTML = state.units.map(u => `<option value="${u.name}">${u.name}</option>`).join('');
         
-        // مرحله 2: اگر واحد پایه کالا در لیست state نیست، دستی اضافه‌اش کن (مهم!)
         const savedBase = rels.base || 'عدد';
         let baseExists = Array.from(baseSelect.options).some(o => o.value === savedBase);
         if (!baseExists) {
@@ -422,10 +407,10 @@ function editMat(id) {
         renderRelationsUI(); 
         updateUnitDropdowns();
         
-        // مرحله 3: اطمینان از انتخاب درست واحد خرید
         const savedP = rels.selected_purchase || m.purchase_unit || m.unit;
         if(savedP) {
-             const pEl = document.getElementById('mat-purchase-unit');
+             // FIX: استفاده از mat-price-unit
+             const pEl = document.getElementById('mat-price-unit');
              if(![...pEl.options].some(o=>o.value===savedP)) {
                  pEl.innerHTML += `<option value="${savedP}">${savedP}</option>`;
              }
@@ -451,7 +436,6 @@ function resetMatForm() {
     document.getElementById('mat-id').value = '';
     currentUnitRelations = [];
     
-    // بازگرداندن لیست واحدها به حالت استاندارد (حذف واحدهای قدیمی اضافه شده)
     const baseSelect = document.getElementById('mat-base-unit-select');
     if(baseSelect) {
         baseSelect.innerHTML = state.units.map(u => `<option value="${u.name}">${u.name}</option>`).join('');
@@ -465,6 +449,7 @@ function resetMatForm() {
     if(btn) btn.innerText = 'ذخیره کالا';
     document.getElementById('mat-cancel-btn').classList.add('hidden');
 }
+
 function showScraperReport(report) {
     const existing = document.getElementById('report-modal');
     if(existing) existing.remove();
