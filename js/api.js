@@ -3,7 +3,6 @@ import { db, functions, ID, Query, APPWRITE_CONFIG, state } from './config.js';
 export async function fetchAllData() {
     console.log("📡 API: دریافت داده‌های اولیه...");
     try {
-        // دریافت همزمان تمام اطلاعات مورد نیاز
         const [cRes, uRes, mRes, fRes] = await Promise.all([
             db.listDocuments(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.CATS, [Query.limit(100)]),
             db.listDocuments(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.UNITS, [Query.limit(100)]), 
@@ -16,7 +15,6 @@ export async function fetchAllData() {
         state.materials = mRes.documents;
         state.formulas = fRes.documents.sort((a, b) => new Date(b.$updatedAt) - new Date(a.$updatedAt));
         
-        // دریافت فرمول‌های عمومی (اختیاری)
         try {
             const sRes = await db.listDocuments(APPWRITE_CONFIG.DB_ID, APPWRITE_CONFIG.COLS.FORMS, [Query.equal('is_public', true), Query.limit(50)]);
             state.publicFormulas = sRes.documents;
@@ -44,27 +42,27 @@ export const api = {
     delete: (col, id) => db.deleteDocument(APPWRITE_CONFIG.DB_ID, col, id),
     get: (col, id) => db.getDocument(APPWRITE_CONFIG.DB_ID, col, id),
     
-    // اجرای اسکرپر واقعی روی سرور
-    runScraper: async () => {
-        console.log("🚀 Executing Scraper Function...");
+    // --- UPDATED SCRAPER CALL ---
+    runScraper: async (payload = {}) => {
+        console.log("🚀 Executing Scraper Function with payload:", payload);
         try {
             const execution = await functions.createExecution(
                 APPWRITE_CONFIG.FUNCTIONS.SCRAPER, 
-                '' // بدنه درخواست (خالی)
+                JSON.stringify(payload) // ارسال داده‌ها به عنوان JSON String
             );
             
             if (execution.status === 'completed') {
                 try {
                     return JSON.parse(execution.responseBody);
                 } catch (e) {
-                    return { success: false, error: "خطا در تحلیل پاسخ سرور" };
+                    return { success: false, error: "خطا در تحلیل پاسخ سرور: " + execution.responseBody };
                 }
             } else {
-                return { success: false, error: "اجرای فانکشن با مشکل مواجه شد: " + execution.status };
+                return { success: false, error: "اجرای فانکشن ناموفق بود: " + execution.status };
             }
         } catch (error) {
             console.error("Function Error:", error);
-            throw { message: "خطای ارتباط با سرور اسکرپر (بررسی کنید ID فانکشن در config.js صحیح باشد)" };
+            throw { message: "خطای ارتباط با سرور اسکرپر" };
         }
     }
 };
