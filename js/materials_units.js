@@ -62,6 +62,7 @@ export function updateUnitDropdowns() {
         if(el) {
             const prev = el.value;
             el.innerHTML = optionsHtml;
+            // حفظ مقدار قبلی حتی اگر در لیست جدید نباشد (جلوگیری از پریدن)
             if (prev && !availableUnits.includes(prev)) {
                 const opt = document.createElement('option');
                 opt.value = prev;
@@ -78,7 +79,8 @@ export function updateUnitDropdowns() {
         }
     });
     
-    document.querySelectorAll('.base-unit-label').forEach(el => el.innerText = baseUnit);
+    const labels = document.querySelectorAll('.base-unit-label');
+    if(labels) labels.forEach(el => el.innerText = baseUnit);
     calculateScraperFactor();
 }
 
@@ -103,12 +105,11 @@ export function calculateScraperFactor() {
     factorInput.value = parseFloat(rate.toFixed(4)); 
 }
 
-// --- اصلاح اصلی در اینجا ---
-// دریافت امن اطلاعات (Safe Access)
+// دریافت امن اطلاعات (جلوگیری از خطای Null)
 export function getUnitData() {
     const getVal = (id) => {
         const el = document.getElementById(id);
-        return el ? el.value : null; // اگر المنت نبود، null برگردان و خطا نده
+        return el ? el.value : null; 
     };
 
     return {

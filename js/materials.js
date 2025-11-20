@@ -6,7 +6,8 @@ import * as Scraper from './materials_scraper.js';
 
 export function setupMaterials(refreshCallback) {
     // 1. مدیریت فرم و ذخیره
-    document.getElementById('material-form').onsubmit = (e) => { e.preventDefault(); saveMaterial(refreshCallback); };
+    const form = document.getElementById('material-form');
+    if (form) form.onsubmit = (e) => { e.preventDefault(); saveMaterial(refreshCallback); };
     
     const cancelBtn = document.getElementById('mat-cancel-btn');
     if(cancelBtn) cancelBtn.onclick = resetMatForm;
@@ -18,25 +19,26 @@ export function setupMaterials(refreshCallback) {
     const sortSel = document.getElementById('sort-materials');
     if(sortSel) sortSel.onchange = () => renderMaterials();
 
-    // 3. مدیریت واحدها (استفاده از ماژول جدید)
+    // 3. مدیریت واحدها
     const addRelBtn = document.getElementById('btn-add-relation');
     if(addRelBtn) addRelBtn.onclick = Units.addRelationRow;
     
     const baseUnitSelect = document.getElementById('mat-base-unit-select');
     if(baseUnitSelect) baseUnitSelect.onchange = Units.updateUnitDropdowns;
     
+    // استفاده از ID صحیح
     ['mat-price-unit', 'mat-scraper-unit'].forEach(id => {
         const el = document.getElementById(id);
         if(el) el.onchange = Units.calculateScraperFactor;
     });
 
-    // 4. مدیریت دکمه‌های اسکرپر (استفاده از ماژول جدید)
+    // 4. اسکرپر
     Scraper.setupScraperListeners(refreshCallback);
 
-    // 5. دکمه مثبت (+)
+    // 5. دکمه مثبت
     setupAddButton();
 
-    // 6. تنظیم اینپوت قیمت
+    // 6. اصلاح اینپوت قیمت (رفع تداخل با main.js)
     setupPriceInput();
 }
 
@@ -65,17 +67,24 @@ function setupAddButton() {
 function setupPriceInput() {
     const priceInput = document.getElementById('mat-price');
     if(priceInput) {
+        // حذف کلاس price-input تا main.js روی آن اثر نگذارد و پرش ایجاد نکند
+        priceInput.classList.remove('price-input');
+        
+        // کلون کردن برای حذف ایونت‌های قبلی
         const newPriceInput = priceInput.cloneNode(true);
         priceInput.parentNode.replaceChild(newPriceInput, priceInput);
+        
         newPriceInput.setAttribute('dir', 'ltr');
         newPriceInput.classList.add('text-left');
         
+        // هنگام فوکوس: نمایش عدد خام
         newPriceInput.onfocus = (e) => {
             const val = e.target.value ? e.target.value.toString().replace(/,/g, '') : '';
             e.target.value = val;
             e.target.select();
         };
         
+        // هنگام خروج: فرمت کردن
         newPriceInput.onblur = (e) => {
             const val = parseLocaleNumber(e.target.value);
             if(val > 0) e.target.value = formatPrice(val); 
@@ -86,12 +95,12 @@ function setupPriceInput() {
 async function saveMaterial(cb) {
     const id = document.getElementById('mat-id').value;
     
-    // دریافت دیتای واحدها از ماژول Units
+    // دریافت داده‌های واحد با اطمینان
     const unitData = Units.getUnitData();
-    let purchaseUnitVal = unitData.selected_purchase;
-    if(!purchaseUnitVal) purchaseUnitVal = unitData.base;
-
-    let consumptionUnitVal = unitData.selected_consumption || purchaseUnitVal;
+    
+    // اطمینان از پر بودن واحدها (Fallback به 'عدد')
+    const purchaseUnitVal = unitData.selected_purchase || unitData.base || 'عدد';
+    const consumptionUnitVal = unitData.selected_consumption || purchaseUnitVal;
 
     const rawPrice = document.getElementById('mat-price').value;
     const priceNum = parseLocaleNumber(rawPrice); 
@@ -104,6 +113,7 @@ async function saveMaterial(cb) {
         scraper_url: document.getElementById('mat-scraper-url').value || null,
         scraper_anchor: document.getElementById('mat-scraper-anchor').value || null,
         
+        // پر کردن فیلدهای الزامی با مقادیر مطمئن
         unit: purchaseUnitVal, 
         purchase_unit: purchaseUnitVal,
         consumption_unit: consumptionUnitVal,
@@ -120,16 +130,16 @@ async function saveMaterial(cb) {
         
         resetMatForm();
         cb(); 
-        alert('✅ ذخیره شد');
+        alert('✅ کالا با موفقیت ذخیره شد');
     } catch(e){ 
+        console.error(e);
         alert('❌ خطا در ذخیره: ' + e.message); 
     }
 }
 
 export function renderMaterials(filter='') {
-    // پر کردن اولیه دراپ‌داون واحد اگر خالی بود
-    const baseSelect = document.getElementById('mat-base-unit-select');
-    if(baseSelect && state.units.length > 0 && baseSelect.options.length === 0) {
+    // پر کردن لیست واحدها اگر خالی بود
+    if (document.getElementById('mat-base-unit-select').options.length === 0 && state.units.length > 0) {
         Units.resetUnitData();
     }
 
@@ -208,16 +218,22 @@ function editMat(id) {
     document.getElementById('mat-display-name').value = m.display_name || '';
     document.getElementById('mat-category').value = m.category_id || '';
     document.getElementById('mat-has-tax').checked = !!m.has_tax; 
-    document.getElementById('mat-price').value = formatPrice(m.price);
+    
+    // تنظیم قیمت
+    const pInput = document.getElementById('mat-price');
+    if(pInput) {
+        // مطمئن شویم کلاس مزاحم حذف شده
+        pInput.classList.remove('price-input');
+        pInput.value = formatPrice(m.price);
+    }
+    
     document.getElementById('mat-scraper-url').value = m.scraper_url || '';
     document.getElementById('mat-scraper-anchor').value = m.scraper_anchor || '';
-    
+    document.getElementById('mat-scraper-factor').value = m.scraper_factor || 1;
+
     try {
         const rels = JSON.parse(m.unit_relations || '{}');
-        
-        // استفاده از ماژول Units برای پر کردن فرم واحدها
         Units.setUnitData(rels);
-        
     } catch(e) { 
         console.error("Parse Error", e);
         Units.resetUnitData();
@@ -234,7 +250,10 @@ function resetMatForm() {
     document.getElementById('material-form').reset();
     document.getElementById('mat-id').value = '';
     
-    // ریست کردن واحدها
+    // حذف کلاس مزاحم برای حالت جدید هم ضروری است
+    const pInput = document.getElementById('mat-price');
+    if(pInput) pInput.classList.remove('price-input');
+
     Units.resetUnitData();
     
     const btn = document.getElementById('mat-submit-btn');
