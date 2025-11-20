@@ -74,11 +74,11 @@ export function renderFormulaDetail(f, refreshCallback) {
                     name = m.display_name || m.name;
                     unitName = c.unit || 'واحد';
                     
-                    // اعمال مالیات در صورت وجود
+                    // محاسبه مالیات در لحظه نمایش
                     let baseMatPrice = m.price;
                     if(m.has_tax) {
                         baseMatPrice = baseMatPrice * 1.10; // +10%
-                        taxBadge = '<span class="text-[9px] text-rose-500 bg-rose-50 px-1 rounded ml-1">+مالیات</span>';
+                        taxBadge = '<span class="text-[9px] text-rose-500 bg-rose-50 px-1 rounded ml-1">+۱۰٪</span>';
                     }
 
                     try {
@@ -142,7 +142,6 @@ export function calculateCost(f) {
         if(c.type==='mat') {
             const m = state.materials.find(x => x.$id === c.id);
             if(m) {
-                // اعمال مالیات قبل از محاسبه
                 let currentPrice = m.price;
                 if(m.has_tax) currentPrice *= 1.10;
 

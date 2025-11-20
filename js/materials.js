@@ -11,39 +11,30 @@ export function setupMaterials(refreshCallback) {
     document.getElementById('sort-materials').onchange = () => renderMaterials();
     document.getElementById('btn-add-relation').onclick = addRelationRow;
     
-    // تریگرها
     const baseUnitSelect = document.getElementById('mat-base-unit-select');
     if(baseUnitSelect) baseUnitSelect.onchange = updateUnitDropdowns;
     
-    // تریگر محاسبه ضریب اسکرپر (وقتی واحد سایت یا واحد قیمت تغییر کرد)
     const scraperUnit = document.getElementById('mat-scraper-unit');
-    const priceUnit = document.getElementById('mat-price-unit');
-    
     if(scraperUnit) scraperUnit.onchange = calculateScraperFactor;
+    
+    const priceUnit = document.getElementById('mat-price-unit');
     if(priceUnit) priceUnit.onchange = calculateScraperFactor;
-    
-    // تریگر محاسبه مالیات (نمایشی)
-    const taxCheck = document.getElementById('mat-tax-enabled');
-    if(taxCheck) taxCheck.onchange = calculateFinalPricePreview;
-    
+
     const scraperBtn = document.getElementById('btn-scraper-trigger');
     if(scraperBtn) scraperBtn.onclick = async () => {
         if(!confirm('آیا از بروزرسانی اتوماتیک قیمت‌ها اطمینان دارید؟')) return;
-        
-        scraperBtn.innerText = '⏳ در حال استعلام قیمت...';
+        scraperBtn.innerText = '⏳ در حال استعلام...';
         scraperBtn.disabled = true;
-        
         try { 
             const result = await api.runScraper(); 
-            
             if(result.success && result.report) {
                 showScraperReport(result.report); 
-                refreshCallback(); // رفرش لیست
+                refreshCallback(); 
             } else {
-                alert('خطا در اجرا: ' + (result.error || 'پاسخ نامعتبر'));
+                alert('خطا: ' + (result.error || 'پاسخ نامعتبر'));
             }
         } 
-        catch(e) { alert('خطای ارتباط: ' + e.message); } 
+        catch(e) { alert('ارتباط برقرار نشد: ' + e.message); } 
         finally { 
             scraperBtn.innerText = '🤖 بروزرسانی قیمت‌ها'; 
             scraperBtn.disabled = false;
@@ -51,101 +42,22 @@ export function setupMaterials(refreshCallback) {
     };
 }
 
-// --- محاسبات هوشمند ---
-
-// محاسبه ضریب هر واحد نسبت به پایه
-function getFactorToBase(unitName) {
-    const baseElem = document.getElementById('mat-base-unit-select');
-    const baseUnit = baseElem ? baseElem.value : '';
-    
-    // اگر واحد انتخاب شده همان پایه است، ضریب ۱ است
-    if (!unitName || unitName === baseUnit) return 1;
-    
-    const rel = currentUnitRelations.find(r => r.name === unitName);
-    if (!rel) return 1; // اگر پیدا نشد پیش‌فرض ۱
-
-    // فرمول: (تعداد پایه) / (تعداد فرعی)
-    // مثال: 15.5 کیلو = 1 شاخه. ضریب کیلو = 1/15.5 = 0.0645
-    // یعنی هر ۱ کیلو، ۰.۰۶۴۵ شاخه است.
-    if(rel.qtyUnit === 0) return 1;
-    return rel.qtyBase / rel.qtyUnit;
-}
-
-function calculateScraperFactor() {
-    const sSelect = document.getElementById('mat-scraper-unit');
-    const pSelect = document.getElementById('mat-price-unit');
-    const factorInput = document.getElementById('mat-scraper-factor');
-    const lbl = document.getElementById('lbl-scraper-calc');
-    
-    if(!sSelect || !pSelect || !factorInput) return;
-    
-    const sUnit = sSelect.value; // واحد سایت (مثلا کیلوگرم)
-    const pUnit = pSelect.value; // واحد خرید ما (مثلا شاخه)
-    
-    // اگر واحدها یکی بودند، ضریب ۱ است
-    if(sUnit === pUnit) {
-        factorInput.value = 1;
-        if(lbl) lbl.innerText = "1";
-        return;
-    }
-    
-    const sFactor = getFactorToBase(sUnit); // ضریب واحد سایت به پایه
-    const pFactor = getFactorToBase(pUnit); // ضریب واحد خرید به پایه
-    
-    let rate = 1;
-    if (sFactor !== 0) {
-        // فرمول تبدیل: ما می‌خواهیم قیمت "واحد خرید" را بدست آوریم.
-        // سایت قیمت "واحد سایت" را می‌دهد.
-        // قیمت خرید = قیمت سایت * (ضریب واحد خرید / ضریب واحد سایت) نیست!
-        // بیایید تست کنیم:
-        // پایه = شاخه.
-        // 15.5 کیلو = 1 شاخه.
-        // ضریب کیلو (sFactor) = 1/15.5
-        // ضریب شاخه (pFactor) = 1
-        // قیمت شاخه = قیمت کیلو * 15.5
-        // Rate = pFactor / sFactor = 1 / (1/15.5) = 15.5 (درست است!)
-        
-        rate = pFactor / sFactor;
-    }
-    
-    factorInput.value = rate; 
-    if(lbl) lbl.innerText = parseFloat(rate.toFixed(4));
-}
-
-function calculateFinalPricePreview() {
-    // این تابع فقط برای نمایش به کاربر است که بداند با مالیات چقدر می‌شود
-    // قیمت اصلی در دیتابیس بدون مالیات ذخیره می‌شود (یا با مالیات، بسته به استراتژی)
-    // اما طبق درخواست شما "تیک بزنم اضافه کنه"، یعنی می‌خواهید قیمت پایه تغییر نکند
-    // ولی در محاسبات نهایی (در فرمول) ۱۰ درصد اضافه شود؟
-    // یا اینکه همین الان قیمت را ۱۰ درصد گران‌تر ذخیره کند؟
-    // معمولاً در سیستم‌های انبار، قیمت خرید خالص ذخیره می‌شود و مالیات جدا.
-    // اما برای سادگی، اگر تیک را زدید، ما قیمت را در ۱۰٪ ضرب می‌کنیم و نمایش می‌دهیم.
-    
-    // فعلا فقط لاجیک ذخیره سازی مهم است.
-}
-
-// --- تابع نمایش گزارش (Pop-up) ---
 function showScraperReport(report) {
     const existing = document.getElementById('report-modal');
     if(existing) existing.remove();
 
     let content = '';
-    if(!report || report.length === 0) content = '<p class="text-center text-slate-400 py-4">هیچ موردی برای بررسی یافت نشد.</p>';
+    if(!report || report.length === 0) content = '<p class="text-center text-slate-400 py-4">نتیجه‌ای یافت نشد.</p>';
     else {
         report.forEach(item => {
             let style = { bg: 'bg-slate-50', border: 'border-slate-200', icon: '⚪', text: 'text-slate-600' };
-            
             if(item.status === 'success') style = { bg: 'bg-emerald-50', border: 'border-emerald-200', icon: '✅', text: 'text-emerald-700' };
             if(item.status === 'error') style = { bg: 'bg-rose-50', border: 'border-rose-200', icon: '❌', text: 'text-rose-700' };
             
             const oldP = formatPrice(item.old || 0);
             const newP = formatPrice(item.new || 0);
+            const debugInfo = item.raw_text ? `<div class="bg-white/50 p-1 rounded mt-1 text-[10px] font-mono text-slate-500 truncate" title="${item.raw_text}">متن خام: "${item.raw_text}"</div>` : '';
             
-            // نمایش متن خام
-            const debugInfo = item.raw_text 
-                ? `<div class="bg-white/50 p-1 rounded mt-1 text-[10px] font-mono text-slate-500 truncate" title="${item.raw_text}">یافت شد: "${item.raw_text}"</div>` 
-                : '';
-
             content += `
             <div class="border rounded-lg p-3 mb-2 ${style.bg} ${style.border} text-sm">
                 <div class="flex justify-between font-bold ${style.text} mb-1">
@@ -155,7 +67,7 @@ function showScraperReport(report) {
                 <div class="text-xs text-slate-600">${item.msg}</div>
                 ${debugInfo}
                 ${item.detail ? `<div class="mt-1 pt-1 border-t border-slate-200/50 text-[10px] font-mono text-slate-500 dir-ltr text-left">${item.detail}</div>` : ''}
-                ${item.status === 'success' ? `<div class="flex justify-between mt-1 text-xs font-bold"><span class="text-rose-400 line-through">${oldP}</span> <span>➝</span> <span class="text-emerald-600">${newP}</span></div>` : ''}
+                ${item.status === 'success' ? `<div class="flex justify-between mt-1 text-xs font-bold"><span class="text-rose-400 line-through">${oldP} تومان</span> <span>➝</span> <span class="text-emerald-600">${newP} تومان</span></div>` : ''}
             </div>`;
         });
     }
@@ -164,42 +76,32 @@ function showScraperReport(report) {
     <div class="fixed inset-0 bg-slate-900/80 z-[100] flex items-center justify-center p-4 backdrop-blur-sm" id="report-modal">
         <div class="bg-white rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in">
             <div class="p-4 border-b bg-slate-50 flex justify-between items-center">
-                <h3 class="font-bold text-slate-800">گزارش عملیات ربات</h3>
+                <h3 class="font-bold text-slate-800">گزارش عملیات</h3>
                 <button onclick="document.getElementById('report-modal').remove()" class="text-slate-400 hover:text-rose-500 text-2xl leading-none">&times;</button>
             </div>
-            <div class="p-4 overflow-y-auto flex-1 custom-scrollbar">
-                ${content}
-            </div>
-            <div class="p-4 border-t bg-slate-50">
-                <button onclick="document.getElementById('report-modal').remove()" class="btn btn-primary w-full">متوجه شدم</button>
-            </div>
+            <div class="p-4 overflow-y-auto flex-1 custom-scrollbar">${content}</div>
+            <div class="p-4 border-t bg-slate-50"><button onclick="document.getElementById('report-modal').remove()" class="btn btn-primary w-full">بستن</button></div>
         </div>
     </div>`;
-
     document.body.insertAdjacentHTML('beforeend', html);
 }
-
-// --- UI مدیریت واحدها ---
 
 function renderRelationsUI() {
     const container = document.getElementById('unit-relations-container');
     if(!container) return;
     container.innerHTML = '';
-    
     const baseElem = document.getElementById('mat-base-unit-select');
     const baseUnitName = baseElem ? (baseElem.value || 'واحد پایه') : 'واحد پایه';
     
     currentUnitRelations.forEach((rel, index) => {
         const options = state.units.map(u => `<option value="${u.name}" ${u.name === rel.name ? 'selected' : ''}>${u.name}</option>`).join('');
-        
         const row = document.createElement('div');
         row.className = 'flex items-center gap-2 bg-white p-2 rounded border border-slate-200 mb-2 shadow-sm';
-        
         row.innerHTML = `
-            <input type="number" step="any" class="input-field h-9 w-16 text-center font-bold text-slate-700 text-xs border-slate-200 bg-slate-50 rel-qty-unit" value="${rel.qtyUnit || 1}" placeholder="#">
+            <input type="number" step="any" class="input-field h-9 w-16 text-center font-bold text-slate-700 text-xs border-slate-200 bg-slate-50 rel-qty-unit" value="${rel.qtyUnit || 1}">
             <select class="input-field h-9 w-28 px-2 text-xs rel-name-select border-slate-200 bg-white text-slate-700">${options}</select>
             <span class="text-slate-400 text-lg">=</span>
-            <input type="number" step="any" class="input-field h-9 w-16 text-center font-bold text-slate-500 text-xs border-slate-200 bg-slate-50 rel-qty-base" value="${rel.qtyBase || 1}" placeholder="#">
+            <input type="number" step="any" class="input-field h-9 w-16 text-center font-bold text-slate-500 text-xs border-slate-200 bg-slate-50 rel-qty-base" value="${rel.qtyBase || 1}">
             <span class="text-slate-500 text-xs w-16 truncate base-unit-label font-bold">${baseUnitName}</span>
             <button type="button" class="text-slate-300 hover:text-rose-500 px-2 text-lg mr-auto transition-colors btn-remove-rel">×</button>
         `;
@@ -210,18 +112,12 @@ function renderRelationsUI() {
             currentUnitRelations[index].qtyBase = parseFloat(row.querySelector('.rel-qty-base').value) || 1;
             updateUnitDropdowns();
         };
-
         row.querySelector('.rel-name-select').onchange = updateRow;
         row.querySelector('.rel-qty-unit').oninput = updateRow;
         row.querySelector('.rel-qty-base').oninput = updateRow;
-        row.querySelector('.btn-remove-rel').onclick = () => { 
-            currentUnitRelations.splice(index, 1); 
-            renderRelationsUI(); 
-            updateUnitDropdowns(); 
-        };
+        row.querySelector('.btn-remove-rel').onclick = () => { currentUnitRelations.splice(index, 1); renderRelationsUI(); updateUnitDropdowns(); };
         container.appendChild(row);
     });
-    
     document.querySelectorAll('.base-unit-label').forEach(el => el.innerText = baseUnitName);
 }
 
@@ -237,12 +133,10 @@ function addRelationRow() {
 function updateUnitDropdowns() {
     const baseElem = document.getElementById('mat-base-unit-select');
     if(!baseElem) return;
-    
     const baseUnit = baseElem.value;
     let availableUnits = [baseUnit];
     currentUnitRelations.forEach(r => availableUnits.push(r.name));
     availableUnits = [...new Set(availableUnits)];
-
     const optionsHtml = availableUnits.map(u => `<option value="${u}">${u}</option>`).join('');
     
     const priceSelect = document.getElementById('mat-price-unit');
@@ -263,42 +157,64 @@ function updateUnitDropdowns() {
     calculateScraperFactor();
 }
 
-// --- CRUD ---
+function getFactorToBase(unitName) {
+    const baseElem = document.getElementById('mat-base-unit-select');
+    const baseUnit = baseElem ? baseElem.value : '';
+    if (unitName === baseUnit) return 1;
+    const rel = currentUnitRelations.find(r => r.name === unitName);
+    if (!rel) return 1; 
+    return rel.qtyBase / rel.qtyUnit;
+}
+
+function calculateScraperFactor() {
+    const sSelect = document.getElementById('mat-scraper-unit');
+    const pSelect = document.getElementById('mat-price-unit');
+    const factorInput = document.getElementById('mat-scraper-factor');
+    if(!sSelect || !pSelect || !factorInput) return;
+    
+    const sUnit = sSelect.value;
+    const pUnit = pSelect.value;
+    
+    const sFactor = getFactorToBase(sUnit);
+    const pFactor = getFactorToBase(pUnit);
+    
+    let rate = 1;
+    if (sFactor !== 0) rate = pFactor / sFactor;
+    
+    factorInput.value = rate; 
+}
 
 async function saveMaterial(cb) {
     const id = document.getElementById('mat-id').value;
     
-    // محاسبه نهایی برای اطمینان
+    // اطمینان از محاسبه ضریب قبل از ذخیره
     calculateScraperFactor();
+    const scraperFactorVal = parseFloat(document.getElementById('mat-scraper-factor').value) || 1;
+    const priceUnitVal = document.getElementById('mat-price-unit').value;
     
-    // دریافت قیمت پایه
-    let priceVal = parseLocaleNumber(document.getElementById('mat-price').value);
-    
-    // اضافه کردن مالیات اگر تیک خورده باشد (Logic 1: افزایش قیمت پایه)
-    // یا می‌توانیم فیلد tax_enabled را ذخیره کنیم و در محاسبات فرمول اعمال کنیم (Logic 2)
-    // اینجا Logic 2 (ذخیره فیلد) را پیاده می‌کنیم تا قیمت اصلی دستکاری نشود
-    
-    const taxEnabled = document.getElementById('mat-tax-enabled').checked;
-
     const data = {
         name: document.getElementById('mat-name').value,
         display_name: document.getElementById('mat-display-name').value || null,
         category_id: document.getElementById('mat-category').value || null,
-        price: priceVal,
+        price: parseLocaleNumber(document.getElementById('mat-price').value),
         scraper_url: document.getElementById('mat-scraper-url').value || null,
         scraper_anchor: document.getElementById('mat-scraper-anchor').value || null,
         
-        // فیلدهای قدیمی (Required) را با مقادیر واحد قیمت پر می‌کنیم
-        purchase_unit: document.getElementById('mat-price-unit').value, 
-        consumption_unit: document.getElementById('mat-price-unit').value, // موقتاً یکی می‌گذاریم
+        // *** رفع خطای "Missing required attribute unit" ***
+        // این فیلد برای سازگاری با دیتابیس قدیمی اجباری است
+        unit: priceUnitVal, 
+        purchase_unit: priceUnitVal,
+        consumption_unit: priceUnitVal, 
         
-        scraper_factor: parseFloat(document.getElementById('mat-scraper-factor').value) || 1,
-        tax_enabled: taxEnabled, // فیلد جدید
+        scraper_factor: scraperFactorVal,
+        
+        // فیلد جدید مالیات
+        has_tax: document.getElementById('mat-has-tax').checked,
         
         unit_relations: JSON.stringify({
             base: document.getElementById('mat-base-unit-select').value,
             others: currentUnitRelations,
-            price_unit: document.getElementById('mat-price-unit').value,
+            price_unit: priceUnitVal,
             scraper_unit: document.getElementById('mat-scraper-unit').value
         })
     };
@@ -309,8 +225,8 @@ async function saveMaterial(cb) {
         resetMatForm();
         cb();
     } catch(e){ 
-        alert('خطا در ذخیره: ' + e.message); 
         console.error(e);
+        alert('خطا در ذخیره: ' + e.message); 
     }
 }
 
@@ -319,7 +235,6 @@ export function renderMaterials(filter='') {
     if(baseSelect && state.units.length > 0 && baseSelect.options.length === 0) {
         baseSelect.innerHTML = state.units.map(u => `<option value="${u.name}">${u.name}</option>`).join('');
     }
-
     const sortElem = document.getElementById('sort-materials');
     const sort = sortElem ? sortElem.value : 'update_desc';
     
@@ -333,29 +248,28 @@ export function renderMaterials(filter='') {
         if(sort === 'price_desc') return b.price - a.price;
         if(sort === 'price_asc') return a.price - b.price;
         if(sort === 'name_asc') return a.name.localeCompare(b.name);
-        if(sort === 'update_asc') return new Date(a.$updatedAt) - new Date(b.$updatedAt);
         return new Date(b.$updatedAt) - new Date(a.$updatedAt);
     });
     
     const el = document.getElementById('materials-container');
     if(!el) return;
-
     if(!list.length) { el.innerHTML='<p class="col-span-full text-center text-slate-400 text-xs">خالی</p>'; return; }
     
     el.innerHTML = list.map(m => {
         const cat = state.categories.find(c => c.$id === m.category_id)?.name || '-';
         let rels = {};
         try { rels = JSON.parse(m.unit_relations || '{}'); } catch(e){}
-        
         const priceUnit = rels.price_unit || m.purchase_unit || 'واحد';
         const dateBadge = getDateBadge(m.$updatedAt);
-        const taxBadge = m.tax_enabled ? '<span class="text-[9px] text-rose-500 bg-rose-50 border border-rose-100 px-1 rounded ml-1">+10% مالیات</span>' : '';
+        
+        // نمایش بج مالیات
+        const taxBadge = m.has_tax ? '<span class="text-[9px] bg-rose-50 text-rose-600 px-1 border border-rose-100 rounded" title="مشمول مالیات">+۱۰٪</span>' : '';
 
         return `
         <div class="bg-white p-3 rounded-xl border border-slate-100 group relative hover:border-teal-400 transition-colors shadow-sm">
             <div class="flex justify-between mb-1 items-start">
                 <div class="flex flex-col gap-1">
-                    <div class="flex items-center">
+                    <div class="flex gap-1">
                         <span class="text-[10px] bg-slate-50 px-2 rounded text-slate-500 border border-slate-100 w-fit">${cat}</span>
                         ${taxBadge}
                     </div>
@@ -385,40 +299,26 @@ export function renderMaterials(filter='') {
 function editMat(id) {
     const m = state.materials.find(x => x.$id === id);
     if(!m) return;
-    
     document.getElementById('mat-id').value = m.$id;
     document.getElementById('mat-name').value = m.name;
     document.getElementById('mat-display-name').value = m.display_name || '';
     document.getElementById('mat-category').value = m.category_id || '';
-    
-    // لود وضعیت مالیات
-    document.getElementById('mat-tax-enabled').checked = m.tax_enabled || false;
+    document.getElementById('mat-has-tax').checked = !!m.has_tax; 
     
     try {
         const rels = JSON.parse(m.unit_relations || '{}');
         const baseSelect = document.getElementById('mat-base-unit-select');
-        if(state.units.length === 0) {
-             baseSelect.innerHTML = `<option value="${rels.base || 'Unit'}">${rels.base || 'Unit'}</option>`;
-        }
+        if(state.units.length === 0) baseSelect.innerHTML = `<option value="${rels.base || 'Unit'}">${rels.base || 'Unit'}</option>`;
         if(rels.base) baseSelect.value = rels.base;
-
-        currentUnitRelations = (rels.others || []).map(r => ({
-            name: r.name, qtyUnit: r.qtyUnit || 1, qtyBase: r.qtyBase || 1
-        }));
-        renderRelationsUI();
-        updateUnitDropdowns();
+        currentUnitRelations = (rels.others || []).map(r => ({ name: r.name, qtyUnit: r.qtyUnit || 1, qtyBase: r.qtyBase || 1 }));
+        renderRelationsUI(); updateUnitDropdowns();
         
         if(rels.price_unit) document.getElementById('mat-price-unit').value = rels.price_unit;
         else if(m.purchase_unit) document.getElementById('mat-price-unit').value = m.purchase_unit;
 
         if(rels.scraper_unit) document.getElementById('mat-scraper-unit').value = rels.scraper_unit;
-        
         calculateScraperFactor(); 
-
-    } catch(e) {
-        currentUnitRelations = [];
-        renderRelationsUI();
-    }
+    } catch(e) { currentUnitRelations = []; renderRelationsUI(); }
     
     document.getElementById('mat-price').value = formatPrice(m.price);
     document.getElementById('mat-scraper-url').value = m.scraper_url || '';
@@ -427,14 +327,12 @@ function editMat(id) {
     const btn = document.getElementById('mat-submit-btn');
     if(btn) btn.innerText = 'ذخیره تغییرات';
     document.getElementById('mat-cancel-btn').classList.remove('hidden');
-    
     if(window.innerWidth < 768) document.getElementById('tab-materials').scrollIntoView({behavior:'smooth'});
 }
 
 function resetMatForm() {
     document.getElementById('material-form').reset();
     document.getElementById('mat-id').value = '';
-    document.getElementById('mat-tax-enabled').checked = false; // ریست چک باکس
     currentUnitRelations = [];
     renderRelationsUI();
     updateUnitDropdowns();

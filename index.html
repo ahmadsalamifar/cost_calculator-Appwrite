@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سامانه مدیریت تولید سیمرغ (نسخه ۲.۴)</title>
+    <title>سامانه مدیریت تولید سیمرغ (نسخه ۲.۵)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
@@ -148,10 +148,11 @@
                                         <select id="mat-price-unit" class="input-field text-xs bg-white h-10 pt-1 font-bold text-slate-600 border-teal-200"></select>
                                     </div>
                                 </div>
-                                <!-- NEW: Tax Checkbox -->
-                                <div class="mt-2 flex items-center gap-2">
-                                    <input type="checkbox" id="mat-has-tax" class="w-4 h-4 text-teal-600 rounded border-gray-300 focus:ring-teal-500">
-                                    <label for="mat-has-tax" class="text-[10px] text-teal-800">مشمول مالیات (۱۰٪ اضافه شود)</label>
+                                
+                                <!-- چک‌باکس مالیات (جدید) -->
+                                <div class="mt-2 flex items-center gap-2 bg-white p-2 rounded border border-teal-100/50">
+                                    <input type="checkbox" id="mat-has-tax" class="w-4 h-4 text-teal-600 rounded border-gray-300 focus:ring-teal-500 cursor-pointer">
+                                    <label for="mat-has-tax" class="text-[11px] text-teal-800 cursor-pointer select-none">مشمول مالیات (۱۰٪ اضافه در محاسبات)</label>
                                 </div>
                             </div>
 
