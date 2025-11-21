@@ -65,15 +65,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         await fetchAllData();
         
         // نمایش UI پس از لود دیتا
-        document.getElementById('loading-screen').classList.add('hidden');
-        document.getElementById('app-content').classList.remove('hidden');
+        const loadingScreen = document.getElementById('loading-screen');
+        if(loadingScreen) loadingScreen.classList.add('hidden');
         
-        // تنظیم تب‌ها
-        const tabs = ['formulas', 'materials', 'categories', 'store'];
+        const appContent = document.getElementById('app-content');
+        if(appContent) appContent.classList.remove('hidden');
+        
+        // --- اصلاح خطا: مدیریت تب‌ها ---
+        // 'store' را از این لیست حذف کردیم چون دکمه تب ندارد (دکمه جداگانه دارد)
+        const tabs = ['formulas', 'materials', 'categories']; 
+        
         tabs.forEach(t => {
-             document.getElementById('btn-tab-' + t).onclick = () => switchTab(t);
+             const btn = document.getElementById('btn-tab-' + t);
+             // چک کردن وجود دکمه برای جلوگیری از خطای Cannot set properties of null
+             if (btn) {
+                 btn.onclick = () => switchTab(t);
+             }
         });
-        document.getElementById('btn-open-store').onclick = () => switchTab('store');
+
+        // دکمه فروشگاه جداگانه هندل می‌شود
+        const btnStore = document.getElementById('btn-open-store');
+        if (btnStore) {
+            btnStore.onclick = () => switchTab('store');
+        }
 
         // راه‌اندازی ماژول‌ها
         Formulas.setupFormulas(refreshApp);
@@ -86,6 +100,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         setupGlobalPriceInputs();
 
         updateUI();
+        
         // تب پیش‌فرض
         switchTab('formulas');
         
