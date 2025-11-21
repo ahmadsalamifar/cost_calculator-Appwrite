@@ -31,7 +31,6 @@ export function renderFormulaList(filter='') {
 export function renderFormulaDetail(f) {
     if(!f) return;
 
-    // پر کردن اطلاعات هدر و اینپوت‌ها
     document.getElementById('active-formula-name').innerText = f.name;
     document.getElementById('active-formula-date').innerText = "بروزرسانی: " + formatDate(f.$updatedAt);
     
@@ -40,7 +39,6 @@ export function renderFormulaDetail(f) {
     setVal('inp-overhead', formatPrice(f.overhead));
     setVal('inp-profit', f.profit);
     
-    // رندر لیست اجزا
     let comps = [];
     try { comps = JSON.parse(f.components || '[]'); } catch(e) {}
     
@@ -60,7 +58,6 @@ export function renderFormulaDetail(f) {
                     unitName = c.unit || 'واحد';
                     if(m.has_tax) taxBadge = '<span class="text-[9px] text-rose-500 bg-rose-50 px-1 rounded ml-1 border border-rose-100">+۱۰٪</span>';
 
-                    // محاسبه قیمت واحد برای نمایش
                     try {
                         let baseMatPrice = m.price;
                         if(m.has_tax) baseMatPrice *= 1.10;
@@ -104,24 +101,20 @@ export function renderFormulaDetail(f) {
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
                     <div class="text-right font-mono font-bold text-slate-700 text-xs w-20">${formatPrice(total)}</div>
-                    <!-- دکمه حذف: فقط دیتا-اینکس دارد و رویدادش در فایل اصلی هندل می‌شود -->
                     <button class="text-rose-400 lg:opacity-0 group-hover:opacity-100 px-2 btn-del-comp transition-opacity" data-idx="${idx}">×</button>
                 </div>
             </div>`;
         }).join('');
     }
     
-    // محاسبه نهایی
     const calc = calculateCost(f);
     document.getElementById('lbl-final-price').innerText = formatPrice(calc.final);
     
-    // آپدیت دراپ‌داون‌ها
     updateDropdowns();
     updateCompSelect();
     updateCompUnitSelect();
 }
 
-// توابع مربوط به دراپ‌داون افزودن
 export function updateDropdowns() {
     const filterEl = document.getElementById('comp-filter');
     if(!filterEl) return;

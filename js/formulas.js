@@ -32,7 +32,7 @@ export function setupFormulas(refreshCallback) {
         if(item) selectFormula(item.getAttribute('data-id'), refreshCallback);
     });
     
-    // حذف جزء از لیست اجزا (Event Delegation - حل مشکل وابستگی چرخشی)
+    // حذف جزء از لیست اجزا (Event Delegation)
     document.getElementById('formula-comps-list').addEventListener('click', (e) => {
         if(e.target.classList.contains('btn-del-comp')) {
             const idx = parseInt(e.target.getAttribute('data-idx'));
@@ -102,7 +102,6 @@ async function addComp(refreshCb) {
     const f = state.formulas.find(x => x.$id === state.activeFormulaId);
     
     let comps = JSON.parse(f.components || '[]');
-    // اگر کالا تکراری بود، به تعدادش اضافه کن
     const exist = comps.find(c => c.id === id && c.type === type && c.unit === unit);
     if(exist) exist.qty += qty; else comps.push({id, type, qty, unit});
     
@@ -110,7 +109,8 @@ async function addComp(refreshCb) {
         await api.update(APPWRITE_CONFIG.COLS.FORMS, state.activeFormulaId, { components: JSON.stringify(comps) });
         document.getElementById('comp-qty').value = '';
         f.components = JSON.stringify(comps);
-        UI.renderFormulaDetail(f); // رندر مجدد فقط بخش UI
+        UI.renderFormulaDetail(f); 
+        refreshCb(); // بروزرسانی لیست سمت راست
     } catch(e) { alert(e.message); }
 }
 
@@ -125,6 +125,7 @@ async function removeComp(formulaId, idx, cb) {
         await api.update(APPWRITE_CONFIG.COLS.FORMS, f.$id, { components: JSON.stringify(comps) });
         f.components = JSON.stringify(comps);
         UI.renderFormulaDetail(f);
+        cb(); // بروزرسانی لیست سمت راست
     } catch(e) { alert(e.message); }
 }
 
@@ -137,6 +138,7 @@ async function updateCostVariables(key, val, cb) {
         if(f) { 
             f[key] = numVal; 
             UI.renderFormulaDetail(f); 
+            cb(); // بروزرسانی لیست سمت راست
         }
     } catch(e) {}
 }
