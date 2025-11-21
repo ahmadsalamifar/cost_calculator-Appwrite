@@ -1,6 +1,6 @@
 import { account, state } from './config.js';
 import { fetchAllData } from './api.js';
-import { switchTab, formatInput } from './utils.js';
+import { switchTab, formatPrice, parseLocaleNumber } from './utils.js'; // formatInput حذف شد
 import * as Formulas from './formulas.js';
 import * as Materials from './materials.js';
 import * as Categories from './categories.js';
@@ -75,9 +75,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         Store.setupStore(refreshApp);
         Print.setupPrint();
         
-        // فرمترهای ورودی پول
+        // --- اصلاح سیستم فرمت‌دهی قیمت‌ها (جایگزین formatInput) ---
+        // این بخش برای اینپوت‌های دستمزد و سربار در تب فرمول‌ها استفاده می‌شود
         document.querySelectorAll('.price-input').forEach(el => {
-            el.addEventListener('input', () => formatInput(el));
+            // وقتی کاربر کلیک کرد: عدد خام نشان بده (بدون ویرگول)
+            el.addEventListener('focus', (e) => {
+                const val = parseLocaleNumber(e.target.value);
+                e.target.value = val !== 0 ? val : '';
+                e.target.select();
+            });
+            
+            // وقتی کاربر خارج شد: فرمت پول اعمال کن (۳ رقم ۳ رقم)
+            el.addEventListener('blur', (e) => {
+                 const val = parseLocaleNumber(e.target.value);
+                 // اگر مقدار داشت فرمت کن، وگرنه خالی بگذار یا صفر (بسته به نیاز)
+                 if(val !== 0 || e.target.value.trim() !== '') {
+                     e.target.value = formatPrice(val);
+                 }
+            });
         });
 
         updateUI();
