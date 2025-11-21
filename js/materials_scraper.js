@@ -2,10 +2,8 @@ import { api } from './api.js';
 import { formatPrice } from './utils.js';
 
 export function setupScraperListeners(refreshCallback) {
-    // دکمه بروزرسانی کلی
     const bulkScraperBtn = document.getElementById('btn-scraper-trigger');
     if(bulkScraperBtn) {
-        // حذف لیسنرهای قبلی برای جلوگیری از تکرار
         const newBtn = bulkScraperBtn.cloneNode(true);
         bulkScraperBtn.parentNode.replaceChild(newBtn, bulkScraperBtn);
         
@@ -34,13 +32,11 @@ export function setupScraperListeners(refreshCallback) {
         };
     }
 
-    // دکمه تست لینک (داخل فرم)
     setupTestLinkButton();
 }
 
 function setupTestLinkButton() {
     const urlInput = document.getElementById('mat-scraper-url');
-    // اگر قبلا دکمه ساخته شده، دوباره نساز
     if(urlInput && !document.getElementById('btn-test-link')) {
         const parent = urlInput.parentElement; 
         const rowWrapper = document.createElement('div');
@@ -70,11 +66,14 @@ function setupTestLinkButton() {
             try {
                 const res = await api.runScraper({ type: 'single_check', url, anchor, factor });
                 if(res.success && res.data) {
-                    document.getElementById('mat-price').value = formatPrice(res.data.final_price);
+                    const p = res.data;
+                    // نمایش جزئیات برای دیباگ بهتر
+                    alert(`✅ قیمت نهایی: ${formatPrice(p.final_price)} تومان\n\n(قیمت سایت: ${formatPrice(p.found_price)} × ضریب: ${factor})`);
+                    
+                    document.getElementById('mat-price').value = formatPrice(p.final_price);
                     const pInput = document.getElementById('mat-price');
                     pInput.classList.add('bg-green-100', 'text-green-800');
                     setTimeout(() => pInput.classList.remove('bg-green-100', 'text-green-800'), 2000);
-                    alert(`✅ قیمت یافت شد: ${formatPrice(res.data.final_price)} تومان`);
                 } else {
                     alert('❌ خطا: ' + (res.error || 'قیمت پیدا نشد'));
                 }
@@ -98,9 +97,15 @@ function showScraperReport(report) {
     else {
         report.forEach(item => {
             let style = { bg: 'bg-slate-50', border: 'border-slate-200', icon: '⚪' };
+            let detail = '';
+
             if(item.status === 'success') {
                 style = { bg: 'bg-emerald-50', border: 'border-emerald-200', icon: '✅' };
                 successCount++;
+                // نمایش جزئیات قیمت خام و ضریب
+                if(item.found && item.factor && item.factor !== 1) {
+                    detail = `<div class="mt-1 text-[9px] text-slate-400">سایت: ${formatPrice(item.found)} × ضریب ${item.factor}</div>`;
+                }
             }
             if(item.status === 'error') style = { bg: 'bg-rose-50', border: 'border-rose-200', icon: '❌' };
             
@@ -112,6 +117,7 @@ function showScraperReport(report) {
                 </div>
                 <div class="text-slate-500 mt-1 text-[10px]">${item.msg}</div>
                 ${item.new ? `<div class="mt-1 font-bold text-emerald-600 text-left dir-ltr">${formatPrice(item.new)} T</div>` : ''}
+                ${detail}
             </div>`;
         });
     }
