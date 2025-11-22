@@ -2,6 +2,28 @@ import { state } from './config.js';
 import { formatPrice, formatDate } from './utils.js';
 import { calculateCost, getUnitFactor } from './formulas_calc.js';
 
+// تابع کمکی قدرتمند برای پارس کردن اجزا
+// این تابع مشکل Double-Stringify شدن داده‌ها در Appwrite را حل می‌کند
+function parseComponents(data) {
+    if (!data) return [];
+    if (Array.isArray(data)) return data;
+    
+    try {
+        // مرحله اول پارس
+        const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+        
+        // چک کردن اینکه آیا نتیجه هنوز رشته است؟ (مشکل Double Stringify)
+        if (typeof parsed === 'string') {
+            return JSON.parse(parsed);
+        }
+        
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+        console.error("Error parsing components:", e, data);
+        return [];
+    }
+}
+
 // رندر لیست سمت راست (لیست اصلی فرمول‌ها)
 export function renderFormulaList(filterText = '') {
     const el = document.getElementById('formula-master-list');
@@ -17,12 +39,20 @@ export function renderFormulaList(filterText = '') {
     el.innerHTML = list.map(f => {
         const calc = calculateCost(f); 
         const isActive = f.$id === state.activeFormulaId;
+        
+        // نمایش تعداد اقلام در لیست اصلی برای اطمینان کاربر
+        const comps = parseComponents(f.components);
+        const count = comps.length;
+
         return `
         <div class="p-3 border-b border-slate-100 cursor-pointer hover:bg-teal-50 transition-colors ${isActive ? 'bg-teal-50 border-r-4 border-teal-600' : ''}" data-id="${f.$id}">
-            <div class="font-bold text-xs text-slate-700 pointer-events-none">${f.name}</div>
-            <div class="text-[10px] text-slate-400 mt-0.5 pointer-events-none flex justify-between">
+            <div class="font-bold text-xs text-slate-700 pointer-events-none flex justify-between">
+                <span>${f.name}</span>
+                <span class="bg-slate-100 text-slate-500 px-1.5 rounded text-[9px]">${count} جزء</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-1 pointer-events-none flex justify-between items-end">
                 <span>${formatDate(f.$updatedAt)}</span>
-                <span class="font-bold text-teal-700">${formatPrice(calc.final)} ت</span>
+                <span class="font-bold text-teal-700 text-xs">${formatPrice(calc.final)} ت</span>
             </div>
         </div>`;
     }).join('');
@@ -50,28 +80,13 @@ export function renderFormulaDetail(f) {
     // 2. رندر لیست اجزا
     const listEl = document.getElementById('formula-comps-list');
     if (listEl) {
-        let comps = [];
-        try { 
-            comps = typeof f.components === 'string' ? JSON.parse(f.components) : f.components; 
-        } catch(e) { console.error("JSON Parse Error in render:", e); }
-        
-        if (!Array.isArray(comps)) comps = [];
-
-        // لاگ برای دیباگ: اگر لیست خالی است در کنسول چک کنید آیا داده دارید؟
-        // console.log(`Formula: ${f.name}, Components:`, comps);
+        // استفاده از تابع پارس جدید
+        const comps = parseComponents(f.components);
         
         if (comps.length === 0) {
             listEl.innerHTML = '<div class="p-8 text-center text-slate-400 text-xs">اجزای سازنده را اضافه کنید...</div>';
         } else {
-            listEl.innerHTML = comps.map((c, idx) => {
-                try {
-                    return generateComponentRow(c, idx);
-                } catch(err) {
-                    console.error("Error rendering row:", err, c);
-                    // نمایش خطا به کاربر به جای مخفی کردن سطر
-                    return `<div class="p-2 text-xs text-rose-500 border-b">خطا در نمایش سطر ${idx + 1}</div>`;
-                }
-            }).join('');
+            listEl.innerHTML = comps.map((c, idx) => generateComponentRow(c, idx)).join('');
         }
     }
     
@@ -89,28 +104,25 @@ function generateComponentRow(c, idx) {
     let name = '?', unitName = '-', price = 0, total = 0;
     let taxBadge = '', warning = '';
 
-    // بررسی نوع آیتم (ممکن است در دیتابیس با حروف بزرگ یا کوچک ذخیره شده باشد)
     const type = (c.type || '').toLowerCase();
 
-    if (type === 'mat' || type === 'material') {
-        const m = state.materials.find(x => x.$id === c.id);
-        if (m) { 
-            name = m.display_name || m.name;
-            unitName = c.unit || 'واحد';
-            if (m.has_tax) taxBadge = '<span class="text-[9px] text-rose-500 bg-rose-50 px-1 rounded ml-1 border border-rose-100">+۱۰٪</span>';
+    try {
+        if (type === 'mat' || type === 'material') {
+            const m = state.materials.find(x => x.$id === c.id);
+            if (m) { 
+                name = m.display_name || m.name;
+                unitName = c.unit || 'واحد';
+                if (m.has_tax) taxBadge = '<span class="text-[9px] text-rose-500 bg-rose-50 px-1 rounded ml-1 border border-rose-100">+۱۰٪</span>';
 
-            try {
                 let baseMatPrice = m.price || 0;
                 if (m.has_tax) baseMatPrice *= 1.10;
 
-                // پارس کردن روابط واحدها با ایمنی بالا
                 let rels = {};
                 try {
                     rels = typeof m.unit_relations === 'string' ? JSON.parse(m.unit_relations) : (m.unit_relations || {});
                 } catch(e) {}
 
                 const priceUnit = m.purchase_unit || rels.price_unit || 'عدد';
-                
                 const priceFactor = getUnitFactor(m, priceUnit);
                 const selectedUnitFactor = getUnitFactor(m, unitName);
 
@@ -118,31 +130,33 @@ function generateComponentRow(c, idx) {
                     const basePrice = baseMatPrice / priceFactor;
                     price = basePrice * selectedUnitFactor;
                 }
-            } catch(e) { 
-                console.warn("Calc error for mat:", m.name, e);
-                price = m.price || 0; 
-                warning = '⚠️ محاسبه'; 
+            } else { 
+                // تلاش برای نشان دادن حداقل اطلاعات اگر کالا پیدا نشد
+                name = `کالای حذف شده (${c.id.substring(0,5)}...)`; 
+                warning = '⚠️'; 
             }
-        } else { 
-            name = '(کالای حذف شده)'; 
-            warning = '⚠️'; 
+        } else if (type === 'form' || type === 'formula') {
+            const sub = state.formulas.find(x => x.$id === c.id);
+            if (sub) { 
+                name = `🔗 ${sub.name}`; 
+                unitName = 'عدد'; 
+                price = calculateCost(sub).final; 
+            } else { 
+                name = 'فرمول حذف شده'; 
+                warning = '⚠️'; 
+            }
+        } else {
+            name = 'نامشخص';
+            warning = '❓';
         }
-    } else if (type === 'form' || type === 'formula') {
-        const sub = state.formulas.find(x => x.$id === c.id);
-        if (sub) { 
-            name = `🔗 ${sub.name}`; 
-            unitName = 'عدد'; 
-            price = calculateCost(sub).final; 
-        } else { 
-            name = '(فرمول حذف شده)'; 
-            warning = '⚠️'; 
-        }
-    } else {
-        name = `آیتم نامشخص (${c.id})`;
-        warning = '❓';
+        
+        total = price * (c.qty || 0);
+
+    } catch (err) {
+        console.error("Row render error", err);
+        name = "خطا در نمایش";
+        warning = "❌";
     }
-    
-    total = price * (c.qty || 0);
     
     return `
     <div class="flex justify-between items-center p-3 text-sm hover:bg-slate-50 group border-b border-slate-50">
