@@ -53,9 +53,12 @@ export function renderFormulaDetail(f) {
         let comps = [];
         try { 
             comps = typeof f.components === 'string' ? JSON.parse(f.components) : f.components; 
-        } catch(e) { console.error("JSON Parse Error:", e); }
+        } catch(e) { console.error("JSON Parse Error in render:", e); }
         
         if (!Array.isArray(comps)) comps = [];
+
+        // لاگ برای دیباگ: اگر لیست خالی است در کنسول چک کنید آیا داده دارید؟
+        // console.log(`Formula: ${f.name}, Components:`, comps);
         
         if (comps.length === 0) {
             listEl.innerHTML = '<div class="p-8 text-center text-slate-400 text-xs">اجزای سازنده را اضافه کنید...</div>';
@@ -64,8 +67,9 @@ export function renderFormulaDetail(f) {
                 try {
                     return generateComponentRow(c, idx);
                 } catch(err) {
-                    console.error("Error rendering row:", err);
-                    return ''; // اگر یک سطر خطا داشت، کل لیست خراب نشود
+                    console.error("Error rendering row:", err, c);
+                    // نمایش خطا به کاربر به جای مخفی کردن سطر
+                    return `<div class="p-2 text-xs text-rose-500 border-b">خطا در نمایش سطر ${idx + 1}</div>`;
                 }
             }).join('');
         }
@@ -85,7 +89,10 @@ function generateComponentRow(c, idx) {
     let name = '?', unitName = '-', price = 0, total = 0;
     let taxBadge = '', warning = '';
 
-    if (c.type === 'mat') {
+    // بررسی نوع آیتم (ممکن است در دیتابیس با حروف بزرگ یا کوچک ذخیره شده باشد)
+    const type = (c.type || '').toLowerCase();
+
+    if (type === 'mat' || type === 'material') {
         const m = state.materials.find(x => x.$id === c.id);
         if (m) { 
             name = m.display_name || m.name;
@@ -93,10 +100,15 @@ function generateComponentRow(c, idx) {
             if (m.has_tax) taxBadge = '<span class="text-[9px] text-rose-500 bg-rose-50 px-1 rounded ml-1 border border-rose-100">+۱۰٪</span>';
 
             try {
-                let baseMatPrice = m.price;
+                let baseMatPrice = m.price || 0;
                 if (m.has_tax) baseMatPrice *= 1.10;
 
-                const rels = typeof m.unit_relations === 'string' ? JSON.parse(m.unit_relations) : (m.unit_relations || {});
+                // پارس کردن روابط واحدها با ایمنی بالا
+                let rels = {};
+                try {
+                    rels = typeof m.unit_relations === 'string' ? JSON.parse(m.unit_relations) : (m.unit_relations || {});
+                } catch(e) {}
+
                 const priceUnit = m.purchase_unit || rels.price_unit || 'عدد';
                 
                 const priceFactor = getUnitFactor(m, priceUnit);
@@ -107,14 +119,15 @@ function generateComponentRow(c, idx) {
                     price = basePrice * selectedUnitFactor;
                 }
             } catch(e) { 
-                price = m.price; 
-                warning = '⚠️'; 
+                console.warn("Calc error for mat:", m.name, e);
+                price = m.price || 0; 
+                warning = '⚠️ محاسبه'; 
             }
         } else { 
             name = '(کالای حذف شده)'; 
             warning = '⚠️'; 
         }
-    } else {
+    } else if (type === 'form' || type === 'formula') {
         const sub = state.formulas.find(x => x.$id === c.id);
         if (sub) { 
             name = `🔗 ${sub.name}`; 
@@ -124,9 +137,12 @@ function generateComponentRow(c, idx) {
             name = '(فرمول حذف شده)'; 
             warning = '⚠️'; 
         }
+    } else {
+        name = `آیتم نامشخص (${c.id})`;
+        warning = '❓';
     }
     
-    total = price * c.qty;
+    total = price * (c.qty || 0);
     
     return `
     <div class="flex justify-between items-center p-3 text-sm hover:bg-slate-50 group border-b border-slate-50">
@@ -135,7 +151,7 @@ function generateComponentRow(c, idx) {
                 ${warning} ${name} ${taxBadge}
             </div>
             <div class="text-[10px] text-slate-500 mt-1">
-                <span class="font-mono font-bold bg-slate-200 px-1.5 rounded text-slate-700">${c.qty}</span>
+                <span class="font-mono font-bold bg-slate-200 px-1.5 rounded text-slate-700">${c.qty || 0}</span>
                 <span class="mx-1 text-teal-700">${unitName}</span>
                 <span class="opacity-40 mx-1">×</span>
                 <span class="opacity-70 font-mono">${formatPrice(price)}</span>
@@ -174,25 +190,20 @@ export function updateCompSelect() {
         const otherFormulas = state.formulas.filter(x => x.$id !== state.activeFormulaId);
         html += `<optgroup label="فرمول‌ها">` + otherFormulas.map(x => `<option value="FORM:${x.$id}">🔗 ${x.name}</option>`).join('') + `</optgroup>`;
     } else {
-        // --- اصلاح مهم: نمایش کالاهای یتیم (دسته‌بندی حذف شده) ---
         const validCategoryIds = new Set(state.categories.map(c => c.$id));
 
-        // 1. نمایش بر اساس دسته‌بندی‌های موجود
         state.categories.forEach(cat => {
             if (filter && filter !== 'FORM' && filter !== cat.$id) return;
-            
             const mats = state.materials.filter(x => x.category_id === cat.$id);
             if (mats.length) {
                 html += `<optgroup label="${cat.name}">` + mats.map(x => `<option value="MAT:${x.$id}">${x.name}</option>`).join('') + `</optgroup>`;
             }
         });
         
-        // 2. نمایش کالاهای بدون دسته یا با دسته نامعتبر در بخش "سایر"
         if (!filter || filter === '') {
             const uncategorized = state.materials.filter(x => 
                 !x.category_id || !validCategoryIds.has(x.category_id)
             );
-            
             if (uncategorized.length) {
                 html += `<optgroup label="سایر (بدون دسته‌بندی)">` + uncategorized.map(x => `<option value="MAT:${x.$id}">${x.name}</option>`).join('') + `</optgroup>`;
             }
