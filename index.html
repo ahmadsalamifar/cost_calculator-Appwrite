@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سامانه مدیریت تولید سیمرغ (نسخه ۳.۴)</title>
+    <title>سامانه مدیریت تولید سیمرغ (نسخه ۳.۵ - حسابداری)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
+    <!-- اضافه کردن Chart.js برای نمودارها -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="style.css">
 </head>
@@ -28,16 +30,19 @@
 
         <nav class="nav-tabs shrink-0">
             <button class="tab-btn active" id="btn-tab-formulas" type="button">📋 محصولات</button>
-            <button class="tab-btn" id="btn-tab-materials" type="button">📦 انبار</button>
+            <button class="tab-btn" id="btn-tab-materials" type="button">📦 انبار و خرید</button>
+            <button class="tab-btn" id="btn-tab-reports" type="button">📊 گزارشات</button>
             <button class="tab-btn" id="btn-tab-categories" type="button">📂 تنظیمات</button>
         </nav>
 
         <main class="flex-1 overflow-hidden p-2 md:p-4">
-            <!-- TAB 1: FORMULAS (تزریق توسط JS) -->
+            
+            <!-- TAB 1: FORMULAS -->
             <div id="tab-formulas" class="h-full flex flex-col lg:flex-row gap-4"></div>
 
-            <!-- TAB 2: MATERIALS -->
+            <!-- TAB 2: MATERIALS & INVENTORY -->
             <div id="tab-materials" class="hidden h-full flex flex-col lg:flex-row gap-6 overflow-y-auto lg:overflow-hidden">
+                <!-- فرم سمت راست -->
                 <div class="w-full lg:w-1/3 lg:order-1 order-2 shrink-0">
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 lg:h-full lg:overflow-y-auto custom-scrollbar">
                         <div class="flex justify-between items-center mb-3 border-b pb-2">
@@ -51,6 +56,19 @@
                             <input type="text" id="mat-name" class="input-field text-xs font-bold" placeholder="نام کالا..." required>
                             <input type="text" id="mat-display-name" class="input-field text-xs" placeholder="نام نمایشی (اختیاری)">
 
+                            <!-- آمار موجودی (فقط خواندنی) -->
+                            <div class="bg-indigo-50 p-3 rounded-xl border border-indigo-100 flex justify-between items-center">
+                                <div>
+                                    <span class="text-[10px] text-indigo-800 block font-bold">موجودی فعلی</span>
+                                    <span id="mat-stock-display" class="text-lg font-black text-indigo-600">0</span>
+                                    <span class="text-[9px] text-indigo-400" id="mat-stock-unit">عدد</span>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] text-indigo-800 block font-bold">میانگین خرید</span>
+                                    <span id="mat-avg-price-display" class="text-sm font-bold text-indigo-600">0</span>
+                                </div>
+                            </div>
+
                             <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
                                 <div class="text-[11px] font-bold text-slate-700 mb-2 flex items-center gap-1"><span class="text-amber-500">📐</span> واحدها</div>
                                 <div class="flex items-center gap-2 mb-2 bg-white p-2 rounded border border-slate-100">
@@ -62,7 +80,7 @@
                             </div>
 
                             <div class="bg-teal-50 p-3 rounded-xl border border-teal-100">
-                                <label class="text-[10px] text-teal-800 mb-1 block font-bold">قیمت خرید</label>
+                                <label class="text-[10px] text-teal-800 mb-1 block font-bold">قیمت روز (استعلامی)</label>
                                 <div class="flex gap-2 items-center">
                                     <input type="text" id="mat-price" class="input-field text-sm text-teal-700 font-bold w-2/3 border-teal-200 h-10 ltr text-left" placeholder="0" required>
                                     <div class="w-1/3 relative">
@@ -75,9 +93,10 @@
                                 </div>
                             </div>
 
+                            <!-- بخش اسکرپر -->
                             <div class="pt-2 border-t border-dashed mt-2">
                                 <div class="flex justify-between items-center mb-2">
-                                    <label class="text-[10px] font-bold text-slate-500 flex items-center gap-1"><span>🌐</span> تنظیمات ربات قیمت‌گیر</label>
+                                    <label class="text-[10px] font-bold text-slate-500 flex items-center gap-1"><span>🌐</span> ربات قیمت‌گیر</label>
                                 </div>
                                 <div class="flex flex-col gap-2">
                                     <div class="flex gap-2 items-center">
@@ -89,14 +108,11 @@
                                          <input type="hidden" id="mat-scraper-currency" value="toman">
                                     </div>
                                     <input type="text" id="mat-scraper-anchor" class="input-field text-xs w-full hidden">
-                                    
                                     <div class="flex gap-2 mt-1">
                                         <div class="w-1/2">
-                                            <span class="text-[10px] text-slate-400 block mb-1">واحد سایت:</span>
                                             <select id="mat-scraper-unit" class="input-field text-[10px] text-slate-600 bg-white w-full h-8"></select>
                                         </div>
                                         <div class="w-1/2">
-                                            <span class="text-[10px] text-slate-400 block mb-1">ضریب تبدیل:</span>
                                             <input type="number" step="any" id="mat-scraper-factor" class="input-field text-xs w-full h-8 text-center font-bold dir-ltr" value="1">
                                             <div id="scraper-factor-hint" class="text-[10px] text-slate-400 mt-1 text-center"></div>
                                         </div>
@@ -108,6 +124,7 @@
                     </div>
                 </div>
                 
+                <!-- لیست کالاها -->
                 <div class="w-full lg:w-2/3 lg:order-2 order-1 flex flex-col h-full overflow-hidden">
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full">
                         <div class="flex flex-col sm:flex-row gap-2 mb-4 items-center shrink-0">
@@ -115,8 +132,9 @@
                             <input type="text" id="search-materials" placeholder="جستجو..." class="input-field pl-4 h-10 text-xs flex-grow order-1 sm:order-2">
                             <select id="sort-materials" class="input-field w-full sm:w-auto text-xs h-10 order-2 sm:order-3">
                                 <option value="update_desc">جدیدترین</option>
+                                <option value="stock_asc">موجودی کم</option>
+                                <option value="stock_desc">موجودی زیاد</option>
                                 <option value="category">دسته‌بندی</option>
-                                <option value="price_desc">گران‌ترین</option>
                             </select>
                             <button id="btn-scraper-trigger" class="h-10 text-[10px] text-blue-600 bg-blue-50 px-3 rounded-lg border border-blue-100 hover:bg-blue-100 whitespace-nowrap font-bold flex items-center gap-1 order-4">🤖 <span class="hidden sm:inline">بروزرسانی</span></button>
                         </div>
@@ -125,7 +143,21 @@
                 </div>
             </div>
 
-            <!-- TAB 3: CATEGORIES -->
+            <!-- TAB 3: REPORTS (New) -->
+            <div id="tab-reports" class="hidden h-full overflow-y-auto p-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h3 class="font-bold text-slate-700 mb-4">ارزش ریالی انبار</h3>
+                        <canvas id="chart-stock-value"></canvas>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h3 class="font-bold text-slate-700 mb-4">توزیع دسته‌بندی‌ها</h3>
+                        <canvas id="chart-categories"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: SETTINGS -->
             <div id="tab-categories" class="hidden h-full overflow-y-auto">
                 <div class="max-w-4xl mx-auto mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
@@ -146,16 +178,44 @@
                     </div>
                 </div>
             </div>
-
-            <!-- TAB 4: STORE -->
-            <div id="tab-store" class="hidden h-full overflow-y-auto p-4">
-                <div id="store-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-            </div>
             
         </main>
     </div>
 
-    <!-- MODALS -->
+    <!-- مدال خرید (حسابداری) -->
+    <div id="purchase-modal" class="modal-overlay hidden z-50">
+        <div class="modal-content max-w-sm p-6 bg-white">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h3 class="font-bold text-slate-800">ثبت خرید جدید</h3>
+                <button onclick="document.getElementById('purchase-modal').classList.add('hidden')" class="text-slate-400 hover:text-rose-500">×</button>
+            </div>
+            <div class="bg-slate-50 p-3 rounded mb-4 text-xs text-slate-600">
+                <p>کالا: <span id="buy-mat-name" class="font-bold"></span></p>
+                <p>موجودی فعلی: <span id="buy-current-stock" class="font-bold"></span></p>
+                <p>میانگین قیمت فعلی: <span id="buy-current-avg" class="font-bold"></span></p>
+            </div>
+            <form id="purchase-form" class="space-y-3">
+                <input type="hidden" id="buy-mat-id">
+                <div>
+                    <label class="text-[10px] text-slate-500 block mb-1">تعداد خرید</label>
+                    <div class="flex gap-2">
+                        <input type="number" step="any" id="buy-qty" class="input-field text-center font-bold" required>
+                        <span id="buy-unit-label" class="bg-slate-100 px-2 py-1 rounded text-xs flex items-center">واحد</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] text-slate-500 block mb-1">قیمت واحد خرید (تومان)</label>
+                    <input type="text" id="buy-price" class="input-field text-center font-bold price-input" required>
+                </div>
+                <div class="bg-amber-50 p-2 rounded border border-amber-100 text-[10px] text-amber-700">
+                    قیمت میانگین جدید: <span id="buy-new-avg" class="font-bold text-lg mx-1">---</span> تومان
+                </div>
+                <button type="submit" class="btn btn-primary w-full">ثبت و بروزرسانی انبار</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- سایر مدال‌ها (قبلی) -->
     <div id="new-formula-modal" class="modal-overlay hidden">
         <div class="modal-content max-w-sm p-6">
             <h3 class="font-bold text-slate-800 mb-4">محصول جدید</h3>
@@ -168,6 +228,7 @@
     </div>
 
     <div id="print-modal" class="modal-overlay hidden z-50">
+        <!-- محتوای پرینت قبلی -->
         <div class="modal-content max-w-4xl h-[90vh]">
             <div class="bg-slate-100 p-4 border-b flex flex-col md:flex-row gap-4 no-print shrink-0">
                 <input type="text" id="print-seller-input" placeholder="نام فروشنده" class="input-field text-xs" value="گروه صنعتی سیمرغ">
