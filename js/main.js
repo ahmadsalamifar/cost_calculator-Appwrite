@@ -1,10 +1,9 @@
-// نقطه ورود برنامه (نسخه نهایی و اصلاح شده)
+// نقطه ورود برنامه
 import { account, state, APPWRITE_CONFIG, Query } from './core/config.js';
 import { api } from './core/api.js';
 import { switchTab, toggleElement } from './core/utils.js';
 import { setupPrint } from './print.js'; 
 
-// ایمپورت ماژول‌های جدید از پوشه features
 import * as MaterialController from './features/materials/materialController.js';
 import * as FormulaController from './features/formulas/formulaController.js';
 import * as SettingsController from './features/settings/settingsController.js';
@@ -19,22 +18,23 @@ async function initApp() {
         // 2. دریافت دیتا
         await refreshData();
         
-        // 3. راه‌اندازی ماژول‌ها
+        // 3. راه‌اندازی ماژول‌ها و تزریق HTML
         FormulaController.init(refreshApp);
         MaterialController.init(refreshApp);
         SettingsController.init(refreshApp);
-        StoreController.init(refreshApp); // اگر تابع init دارد
+        if(StoreController.init) StoreController.init(refreshApp);
         
         setupPrint(); 
 
-        // 4. نمایش UI
+        // 4. نمایش UI و تب‌ها
         toggleElement('loading-screen', false);
         toggleElement('app-content', true);
         
         setupTabs();
-        
-        // پیش‌فرض تب اول
         switchTab('formulas');
+        
+        // 5. رفرش اولیه لیست‌ها (مطمئن می‌شویم بعد از نمایش UI پر شوند)
+        updateAllUI();
 
     } catch (err) {
         console.error(err);
@@ -43,7 +43,6 @@ async function initApp() {
 }
 
 async function refreshData() {
-    // دریافت همزمان تمام داده‌ها
     const [c, u, m, f] = await Promise.all([
         api.list(APPWRITE_CONFIG.COLS.CATS, [Query.limit(100)]),
         api.list(APPWRITE_CONFIG.COLS.UNITS, [Query.limit(100)]),
@@ -56,6 +55,8 @@ async function refreshData() {
     state.materials = m.documents;
     state.formulas = f.documents;
     
+    // اگر UI قبلا ساخته شده، آن را آپدیت کن
+    if(!document.getElementById('loading-screen').classList.contains('hidden')) return;
     updateAllUI();
 }
 
@@ -75,7 +76,6 @@ function setupTabs() {
     if(btnStore) btnStore.onclick = () => switchTab('store');
 }
 
-// کال‌بک سراسری برای رفرش کردن کل برنامه بعد از هر تغییر
 async function refreshApp() {
     await refreshData();
 }

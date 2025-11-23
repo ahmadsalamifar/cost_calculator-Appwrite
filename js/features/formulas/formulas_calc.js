@@ -28,10 +28,8 @@ export function getUnitFactor(material, unitName) {
             return found.qtyBase / found.qtyUnit;
         }
         
-        // اگر واحد خرید انتخاب شده بود
+        // اگر واحد خرید انتخاب شده بود و در لیست نبود
         if (unitName === material.purchase_unit) {
-             // اینجا فرض می‌کنیم واحد خرید خودش ضریب دارد، اما چون دیتای مستقیمی نداریم 1 برمی‌گردانیم
-             // مگر اینکه در relations تعریف شده باشد.
              return 1;
         }
 
@@ -57,7 +55,6 @@ export function calculateCost(f) {
                 if (m.has_tax) currentPrice *= 1.10;
 
                 // 2. یافتن ضریب واحد خرید (چون قیمت کالا بر اساس واحد خرید است)
-                // مثلا: قیمت برای "بسته" است، اما فرمول بر اساس "گرم" است.
                 let rels = {};
                 try { rels = typeof m.unit_relations === 'string' ? JSON.parse(m.unit_relations) : m.unit_relations; } catch(e){}
                 
@@ -72,13 +69,12 @@ export function calculateCost(f) {
                     // قیمت مصرفی = قیمت پایه * ضریب واحد مصرف * تعداد
                     matCost += baseUnitPrice * consumptionFactor * c.qty;
                 } else {
-                     // فال‌بک در صورت خطا
                      matCost += currentPrice * c.qty;
                 }
             }
         } else if (c.type === 'form') {
             const sub = state.formulas.find(x => x.$id === c.id);
-            // جلوگیری از لوپ بی‌نهایت: زیرمجموعه نباید خود فرمول باشد
+            // جلوگیری از لوپ بی‌نهایت
             if (sub && sub.$id !== f.$id) {
                  matCost += calculateCost(sub).final * c.qty;
             }
