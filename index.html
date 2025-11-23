@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>سامانه مدیریت تولید سیمرغ (نسخه ۳.۵.۱ - اصلاح شده)</title>
+    <title>سامانه سیمرغ (نسخه ۳.۶ - پایدار)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -41,7 +41,8 @@
 
             <!-- TAB 2: MATERIALS & INVENTORY -->
             <div id="tab-materials" class="hidden h-full flex flex-col lg:flex-row gap-6 overflow-y-auto lg:overflow-hidden">
-                <div class="w-full lg:w-1/3 lg:order-1 order-2 shrink-0">
+                <!-- فرم مدیریت کالا (در موبایل پایین، در دسکتاپ چپ) -->
+                <div class="w-full lg:w-1/3 lg:order-1 order-2 shrink-0 pb-20 lg:pb-0">
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 lg:h-full lg:overflow-y-auto custom-scrollbar">
                         <div class="flex justify-between items-center mb-3 border-b pb-2">
                             <h3 class="font-bold text-slate-700 text-sm">مدیریت کالا</h3>
@@ -54,6 +55,7 @@
                             <input type="text" id="mat-name" class="input-field text-xs font-bold" placeholder="نام کالا..." required>
                             <input type="text" id="mat-display-name" class="input-field text-xs" placeholder="نام نمایشی (اختیاری)">
 
+                            <!-- آمار موجودی -->
                             <div class="bg-indigo-50 p-3 rounded-xl border border-indigo-100 flex justify-between items-center">
                                 <div>
                                     <span class="text-[10px] text-indigo-800 block font-bold">موجودی فعلی</span>
@@ -104,7 +106,6 @@
                                          <input type="hidden" id="mat-scraper-currency" value="toman">
                                     </div>
                                     <input type="text" id="mat-scraper-anchor" class="input-field text-xs w-full hidden">
-                                    
                                     <div class="flex gap-2 mt-1">
                                         <div class="w-1/2">
                                             <select id="mat-scraper-unit" class="input-field text-[10px] text-slate-600 bg-white w-full h-8"></select>
@@ -121,8 +122,10 @@
                     </div>
                 </div>
                 
-                <div class="w-full lg:w-2/3 lg:order-2 order-1 flex flex-col h-full overflow-hidden">
-                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full">
+                <!-- لیست کالاها (در موبایل بالا، در دسکتاپ راست) -->
+                <!-- اصلاح: h-auto در موبایل تا کل لیست اسکرول بخورد -->
+                <div class="w-full lg:w-2/3 lg:order-2 order-1 flex flex-col h-auto lg:h-full overflow-visible lg:overflow-hidden">
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full min-h-[400px]">
                         <div class="flex flex-col sm:flex-row gap-2 mb-4 items-center shrink-0">
                             <button id="btn-new-mat-plus" class="bg-emerald-500 text-white rounded-lg w-10 h-10 flex items-center justify-center text-xl font-bold shadow hover:bg-emerald-600 transition-colors pb-1 shrink-0 order-3 sm:order-1">+</button>
                             <input type="text" id="search-materials" placeholder="جستجو..." class="input-field pl-4 h-10 text-xs flex-grow order-1 sm:order-2">
@@ -134,7 +137,7 @@
                             </select>
                             <button id="btn-scraper-trigger" class="h-10 text-[10px] text-blue-600 bg-blue-50 px-3 rounded-lg border border-blue-100 hover:bg-blue-100 whitespace-nowrap font-bold flex items-center gap-1 order-4">🤖 <span class="hidden sm:inline">بروزرسانی</span></button>
                         </div>
-                        <div id="materials-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 overflow-y-auto p-1 custom-scrollbar"></div>
+                        <div id="materials-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 lg:overflow-y-auto p-1 custom-scrollbar"></div>
                     </div>
                 </div>
             </div>
@@ -175,7 +178,7 @@
                 </div>
             </div>
 
-            <!-- TAB 5: STORE (این بخش حذف شده بود که باعث خطا می‌شد) -->
+            <!-- TAB 5: STORE (بازگردانی شد برای حل خطا) -->
             <div id="tab-store" class="hidden h-full overflow-y-auto p-4">
                 <div id="store-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
             </div>
@@ -216,7 +219,7 @@
         </div>
     </div>
 
-    <!-- سایر مدال‌ها -->
+    <!-- سایر مدال‌ها (New Formula, Print) -->
     <div id="new-formula-modal" class="modal-overlay hidden">
         <div class="modal-content max-w-sm p-6">
             <h3 class="font-bold text-slate-800 mb-4">محصول جدید</h3>
