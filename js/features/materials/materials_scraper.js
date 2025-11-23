@@ -1,5 +1,6 @@
-import { api } from './api.js';
-import { formatPrice } from './utils.js';
+// اصلاح آدرس‌های ایمپورت به core
+import { api } from '../../core/api.js';
+import { formatPrice } from '../../core/utils.js';
 
 export function setupScraperListeners(refreshCallback) {
     setupBulkScraperButton(refreshCallback);
@@ -44,7 +45,6 @@ function setupTestLinkButton() {
     const urlInput = document.getElementById('mat-scraper-url');
     if (!urlInput) return;
     
-    // بررسی اینکه دکمه قبلا ساخته نشده باشد
     if (document.getElementById('btn-test-link')) return;
 
     const testBtn = document.createElement('button');
@@ -81,7 +81,6 @@ function setupTestLinkButton() {
                 const modeText = currencyMode === 'rial' ? 'ریال' : 'تومان';
                 alert(`✅ قیمت نهایی با ضریب: ${formatPrice(p.final_price)} تومان\n\n(قیمت یافت شده: ${formatPrice(p.found_price)} ${modeText})`);
                 
-                // پر کردن خودکار فیلد قیمت
                 const pInput = document.getElementById('mat-price');
                 if(pInput) {
                     pInput.value = formatPrice(p.final_price);
@@ -150,7 +149,6 @@ function showScraperReport(report) {
     
     document.body.insertAdjacentHTML('beforeend', html);
     
-    // بستن مدال
     const close = () => document.getElementById('report-modal')?.remove();
     document.getElementById('btn-close-report').onclick = close;
     document.getElementById('btn-close-report-btm').onclick = close;

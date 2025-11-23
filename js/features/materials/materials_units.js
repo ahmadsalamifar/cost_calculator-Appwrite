@@ -1,4 +1,8 @@
-import { state } from './config.js';
+// مدیریت واحدها و تبدیل واحد
+// اصلاح آدرس ایمپورت:
+import { state } from '../../core/config.js';
+// استفاده از parseLocaleNumber از utils مشترک
+import { parseLocaleNumber } from '../../core/utils.js';
 
 let currentUnitRelations = [];
 
@@ -21,7 +25,6 @@ export function setUnitData(rels) {
     if (baseSelect) {
         baseSelect.innerHTML = state.units.map(u => `<option value="${u.name}">${u.name}</option>`).join('');
         const savedBase = rels.base || 'عدد';
-        // اگر واحد ذخیره شده در لیست نیست (مثلاً حذف شده)، اضافه کن
         if (![...baseSelect.options].some(o => o.value === savedBase)) {
             const opt = document.createElement('option'); opt.value = savedBase; opt.text = `${savedBase} (قدیمی)`; baseSelect.add(opt);
         }
@@ -41,7 +44,6 @@ export function setUnitData(rels) {
     setSelectValue('mat-consumption-unit', rels.selected_consumption);
     setSelectValue('mat-scraper-unit', rels.selected_scraper);
     
-    // محاسبه مجدد ضریب
     setTimeout(calculateScraperFactor, 200);
 }
 
@@ -96,20 +98,22 @@ export function renderRelationsUI() {
         `;
         
         const inputs = row.querySelectorAll('input, select');
-        inputs.forEach(el => el.onchange = () => {
-            rel.name = row.querySelector('.rel-name-select').value;
-            
-            // استفاده از parseLocaleNumber برای پشتیبانی از اعداد فارسی
-            const qU = parseLocaleNumber(row.querySelector('.rel-qty-unit').value);
-            const qB = parseLocaleNumber(row.querySelector('.rel-qty-base').value);
-            
-            rel.qtyUnit = qU || 0;
-            rel.qtyBase = qB || 0;
-            
-            if (el.tagName === 'SELECT') updateUnitDropdowns();
-            
-            calculateScraperFactor(); 
-        }));
+        
+        // --- رفع باگ سینتکس در اینجا ---
+        inputs.forEach(el => {
+            el.onchange = () => {
+                rel.name = row.querySelector('.rel-name-select').value;
+                const qU = parseLocaleNumber(row.querySelector('.rel-qty-unit').value);
+                const qB = parseLocaleNumber(row.querySelector('.rel-qty-base').value);
+                
+                rel.qtyUnit = qU || 0;
+                rel.qtyBase = qB || 0;
+                
+                if (el.tagName === 'SELECT') updateUnitDropdowns();
+                calculateScraperFactor(); 
+            };
+        });
+        // -------------------------------
 
         row.querySelector('.btn-remove-rel').onclick = () => { 
             currentUnitRelations.splice(index, 1); 
@@ -126,12 +130,10 @@ export function updateUnitDropdowns() {
     if (!baseElem) return;
     const baseUnit = baseElem.value;
     
-    // ساخت لیست یکتا از واحدها
     const availableUnits = new Set([baseUnit]);
     currentUnitRelations.forEach(r => availableUnits.add(r.name));
     const optionsHtml = Array.from(availableUnits).map(u => `<option value="${u}">${u}</option>`).join('');
     
-    // آپدیت دراپ‌داون‌های وابسته
     ['mat-price-unit', 'mat-consumption-unit', 'mat-scraper-unit'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
@@ -141,13 +143,9 @@ export function updateUnitDropdowns() {
     });
     
     document.querySelectorAll('.base-unit-label').forEach(el => el.innerText = baseUnit);
-    
     calculateScraperFactor();
 }
 
-/**
- * محاسبه و نمایش ضریب اسکرپر + متن راهنما
- */
 export function calculateScraperFactor() {
     const sSelect = document.getElementById('mat-scraper-unit');
     const pSelect = document.getElementById('mat-price-unit');
@@ -157,8 +155,8 @@ export function calculateScraperFactor() {
     if (!sSelect || !pSelect || !factorInput || !baseSelect) return;
     
     const baseVal = baseSelect.value;
-    const sUnit = sSelect.value; // واحد سایت
-    const pUnit = pSelect.value; // واحد خرید
+    const sUnit = sSelect.value;
+    const pUnit = pSelect.value;
 
     const getRatioToBase = (unitName) => {
         if (unitName === baseVal) return 1;
@@ -171,21 +169,16 @@ export function calculateScraperFactor() {
     const purchaseRatio = getRatioToBase(pUnit); 
     
     let rate = 1;
-    if (siteRatio !== 0) {
-        rate = purchaseRatio / siteRatio;
-    }
-
+    if (siteRatio !== 0) rate = purchaseRatio / siteRatio;
     if (isNaN(rate) || !isFinite(rate) || rate === 0) rate = 1;
     
     const finalRate = parseFloat(rate.toFixed(6));
     factorInput.value = finalRate;
 
-    // --- ویژگی جدید: نمایش متن راهنما برای دیباگ ---
     showFactorHint(sUnit, pUnit, finalRate);
 }
 
 function showFactorHint(siteUnit, purchaseUnit, rate) {
-    // پیدا کردن یا ساختن المنت راهنما
     let hintEl = document.getElementById('scraper-factor-hint');
     const container = document.getElementById('mat-scraper-factor').parentElement;
     
@@ -201,7 +194,6 @@ function showFactorHint(siteUnit, purchaseUnit, rate) {
             hintEl.innerHTML = `قیمت سایت بدون تغییر وارد می‌شود`;
             hintEl.className = 'text-[10px] text-slate-400 mt-1 w-full text-center';
         } else {
-            // مثال: قیمت (شاخه) = قیمت (کیلو) × 7.55
             const operation = rate >= 1 ? `× ${rate}` : `÷ ${(1/rate).toFixed(2)}`;
             hintEl.innerHTML = `قیمت <b>${purchaseUnit}</b> = قیمت <b>${siteUnit}</b> ${operation}`;
             hintEl.className = 'text-[10px] text-blue-600 mt-1 w-full text-center bg-blue-50 p-1 rounded border border-blue-100';
@@ -212,10 +204,8 @@ function showFactorHint(siteUnit, purchaseUnit, rate) {
 function setSelectValue(id, val) {
     const el = document.getElementById(id);
     if (!el || !val) return;
-    
     if (![...el.options].some(o => o.value === val)) {
-        const opt = document.createElement('option');
-        opt.value = val; opt.text = val; el.add(opt);
+        const opt = document.createElement('option'); opt.value = val; opt.text = val; el.add(opt);
     }
     el.value = val;
 }
