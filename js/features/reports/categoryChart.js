@@ -1,4 +1,3 @@
-// js/features/reports/categoryChart.js
 import { state } from '../../core/config.js';
 
 let chartInstance = null;
@@ -9,7 +8,6 @@ export function renderCategoryChart(canvasId) {
     
     const ctx = canvas.getContext('2d');
 
-    // محاسبه داده‌ها: شمارش تعداد کالاها در هر دسته
     const catCounts = {};
     state.materials.forEach(m => {
         const catName = state.categories.find(c => c.$id === m.category_id)?.name || 'بدون دسته';
@@ -19,7 +17,6 @@ export function renderCategoryChart(canvasId) {
     const labels = Object.keys(catCounts);
     const data = Object.values(catCounts);
 
-    // حذف نمودار قبلی
     if (chartInstance) chartInstance.destroy();
 
     chartInstance = new Chart(ctx, {
@@ -37,7 +34,7 @@ export function renderCategoryChart(canvasId) {
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: false, // این گزینه نیازمند کانتینر با ارتفاع مشخص است
             plugins: {
                 legend: { 
                     position: 'bottom',

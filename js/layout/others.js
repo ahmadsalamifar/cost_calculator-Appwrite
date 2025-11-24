@@ -1,4 +1,3 @@
-// js/layout/others.js
 export function getOtherTabsHTML() {
     return `
     <div id="tab-categories" class="tab-content hidden h-full overflow-y-auto p-2 md:p-4">

@@ -1,4 +1,3 @@
-// js/features/reports/stockChart.js
 import { state } from '../../core/config.js';
 import { formatPrice } from '../../core/utils.js';
 
@@ -10,20 +9,17 @@ export function renderStockChart(canvasId) {
     
     const ctx = canvas.getContext('2d');
 
-    // محاسبه داده‌ها: جمع قیمت کالاها به تفکیک دسته‌بندی
     const catData = {};
     
     state.materials.forEach(m => {
         const catName = state.categories.find(c => c.$id === m.category_id)?.name || 'بدون دسته';
         if (!catData[catName]) catData[catName] = 0;
-        // فرض بر این است که قیمت واحد معیار ارزش است (چون فیلد تعداد در انبار نداریم)
         catData[catName] += m.price || 0;
     });
 
     const labels = Object.keys(catData);
     const data = Object.values(catData);
 
-    // حذف نمودار قبلی برای جلوگیری از روی هم افتادن
     if (chartInstance) chartInstance.destroy();
 
     chartInstance = new Chart(ctx, {
@@ -33,14 +29,14 @@ export function renderStockChart(canvasId) {
             datasets: [{
                 label: 'مجموع ارزش ریالی واحدها',
                 data: data,
-                backgroundColor: '#0d9488', // رنگ teal-600
+                backgroundColor: '#0d9488',
                 borderRadius: 4,
                 hoverBackgroundColor: '#0f766e'
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: false, // این گزینه نیازمند کانتینر با ارتفاع مشخص است
             plugins: {
                 legend: { display: false },
                 tooltip: {
