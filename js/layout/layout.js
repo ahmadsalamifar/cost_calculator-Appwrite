@@ -1,10 +1,12 @@
-// مدیریت ساختار کلی صفحه (Layout) - نسخه ماژولار
-import { getHeaderHTML, getTabsHTML } from './layout/header.js';
-import { getMaterialsTabHTML } from './layout/materials.js';
-import { getFormulasTabHTML } from './layout/formulas.js';
-import { getOtherTabsHTML } from './layout/others.js';
-import { getModalsHTML, getLoadingHTML } from './layout/modals.js';
-import { openModal } from './utils.js';
+// چون این فایل‌ها کنار همین فایل هستند، نیازی به ذکر نام پوشه نیست
+import { getHeaderHTML, getTabsHTML } from './header.js';
+import { getMaterialsTabHTML } from './materials.js';
+import { getFormulasTabHTML } from './formulas.js';
+import { getOtherTabsHTML } from './others.js';
+import { getModalsHTML, getLoadingHTML } from './modals.js';
+
+// فایل utils در پوشه core است، باید یک مرحله به عقب برگردید
+import { openModal } from '../core/utils.js';odal } from './utils.js';
 
 export function injectAppLayout() {
     const appHTML = `
