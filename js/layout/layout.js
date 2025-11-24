@@ -1,11 +1,11 @@
-// چون این فایل‌ها کنار همین فایل هستند، نیازی به ذکر نام پوشه نیست
+// js/layout/layout.js
 import { getHeaderHTML, getTabsHTML } from './header.js';
 import { getMaterialsTabHTML } from './materials.js';
 import { getFormulasTabHTML } from './formulas.js';
+// ایمپورت فایل جدید گزارشات
+import { getReportsTabHTML } from './reports.js'; 
 import { getOtherTabsHTML } from './others.js';
 import { getModalsHTML, getLoadingHTML } from './modals.js';
-
-// فایل utils در پوشه core است، باید یک مرحله به عقب برگردید
 import { openModal } from '../core/utils.js';
 
 export function injectAppLayout() {
@@ -19,6 +19,9 @@ export function injectAppLayout() {
             <main class="flex-1 overflow-hidden p-2 md:p-4 relative">
                 ${getFormulasTabHTML()}
                 ${getMaterialsTabHTML()}
+                
+                ${getReportsTabHTML()}
+                
                 ${getOtherTabsHTML()}
             </main>
         </div>
@@ -27,8 +30,6 @@ export function injectAppLayout() {
     `;
 
     document.body.innerHTML = appHTML;
-
-    // اتصال رویدادهای اولیه که مربوط به خود لی‌اوت هستند (مثل دکمه‌های مدال)
     setupLayoutEvents();
 }
 

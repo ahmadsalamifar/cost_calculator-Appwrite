@@ -1,12 +1,6 @@
+// js/layout/others.js
 export function getOtherTabsHTML() {
     return `
-    <div id="tab-reports" class="tab-content hidden h-full overflow-y-auto p-2 md:p-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200"><h3 class="font-bold text-slate-700 mb-4">ارزش ریالی انبار</h3><canvas id="chart-stock-value"></canvas></div>
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200"><h3 class="font-bold text-slate-700 mb-4">توزیع دسته‌بندی‌ها</h3><canvas id="chart-categories"></canvas></div>
-        </div>
-    </div>
-    
     <div id="tab-categories" class="tab-content hidden h-full overflow-y-auto p-2 md:p-4">
         <div class="max-w-4xl mx-auto mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
