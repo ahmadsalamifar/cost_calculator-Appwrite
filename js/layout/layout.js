@@ -6,7 +6,7 @@ import { getOtherTabsHTML } from './others.js';
 import { getModalsHTML, getLoadingHTML } from './modals.js';
 
 // فایل utils در پوشه core است، باید یک مرحله به عقب برگردید
-import { openModal } from '../core/utils.js';odal } from './utils.js';
+import { openModal } from '../core/utils.js';
 
 export function injectAppLayout() {
     const appHTML = `
