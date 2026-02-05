@@ -24,47 +24,17 @@ Built with performance and simplicity in mind, using Vanilla JavaScript, Tailwin
 
 🛠️ Tech Stack
 
-Component
+Frontend: Vanilla JavaScript (ES Modules) - Bundler-free, fast, and lightweight
 
-Technology
+Styling: Tailwind CSS - CDN version for rapid development (Utility-first)
 
-Description
+Backend: Appwrite - Database, Auth, and Cloud Functions (Backend-as-a-Service)
 
-Frontend
+Scraper: Node.js (Appwrite Functions) - Runs in an isolated server environment to bypass CORS and handle heavy processing
 
-Vanilla JavaScript (ES Modules)
+Charting: Chart.js - Interactive and beautiful charts
 
-Bundler-free, fast, and lightweight
-
-Styling
-
-Tailwind CSS
-
-CDN version for rapid development (Utility-first)
-
-Backend
-
-Appwrite
-
-Database, Auth, and Cloud Functions (Backend-as-a-Service)
-
-Scraper
-
-Node.js (Appwrite Functions)
-
-Runs in an isolated server environment to bypass CORS and handle heavy processing
-
-Charting
-
-Chart.js
-
-Interactive and beautiful charts
-
-Icons
-
-Native Emoji & CSS
-
-No dependencies on heavy icon libraries
+Icons: Native Emoji & CSS - No dependencies on heavy icon libraries
 
 🚀 Getting Started
 
