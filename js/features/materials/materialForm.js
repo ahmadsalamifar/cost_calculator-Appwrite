@@ -59,7 +59,12 @@ function collectFormData() {
         
         scraper_url: document.getElementById('mat-scraper-url').value,
         scraper_anchor: document.getElementById('mat-scraper-anchor').value,
-        scraper_factor: parseFloat(document.getElementById('mat-scraper-factor').value) || 1
+        scraper_factor: parseFloat(document.getElementById('mat-scraper-factor').value) || 1,
+
+        // --- اصلاح خطای Missing required attribute ---
+        // این مقادیر باید حتماً پر شوند تا Appwrite خطا ندهد
+        purchase_unit: unitData.selected_purchase || 'عدد',
+        consumption_unit: unitData.selected_consumption || 'عدد'
     };
 }
 
