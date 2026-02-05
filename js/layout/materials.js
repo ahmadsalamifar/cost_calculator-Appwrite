@@ -2,11 +2,19 @@ import { t } from '../core/i18n.js';
 
 export function getMaterialsTabHTML() {
     return `
-    <div id="tab-materials" class="tab-content hidden h-full flex flex-col lg:flex-row gap-4 overflow-hidden">
-        <!-- ستون لیست -->
-        <div class="w-full lg:w-2/3 order-1 lg:order-2 flex flex-col h-full overflow-hidden">
+    <!-- 
+      تغییرات مهم برای موبایل:
+      1. حذف overflow-hidden از کانتینر اصلی در موبایل (جایگزینی با overflow-y-auto md:overflow-hidden)
+      2. حذف h-full اجباری در موبایل برای ستون‌ها
+      3. تنظیم order: لیست اول، فرم دوم
+    -->
+    <div id="tab-materials" class="tab-content hidden h-full flex flex-col lg:flex-row gap-4 overflow-y-auto lg:overflow-hidden pb-20 lg:pb-0">
+        
+        <!-- ستون لیست کالاها (در موبایل بالا نمایش داده می‌شود) -->
+        <div class="w-full lg:w-2/3 order-1 lg:order-2 flex flex-col h-[500px] lg:h-full min-h-[400px] shrink-0">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full">
-                <div class="p-3 border-b flex flex-wrap gap-2 items-center bg-slate-50 rounded-t-2xl shrink-0">
+                <!-- هدر لیست (دکمه‌ها و جستجو) -->
+                <div class="p-3 border-b flex flex-wrap gap-2 items-center bg-slate-50 rounded-t-2xl shrink-0 sticky top-0 z-10">
                     <button id="btn-new-mat-plus" class="bg-emerald-600 text-white rounded-xl px-3 h-10 flex items-center justify-center text-sm font-bold shadow hover:bg-emerald-700 transition-colors gap-1 shrink-0"><span>+</span> <span class="hidden sm:inline">${t('new_material')}</span></button>
                     <button id="btn-scraper-trigger" class="h-10 text-xs text-blue-600 bg-blue-50 px-3 rounded-xl border border-blue-200 hover:bg-blue-100 whitespace-nowrap font-bold flex items-center gap-1 shrink-0"><span>🔄</span> <span class="">${t('get_prices')}</span></button>
                     <div class="relative flex-grow min-w-[120px]">
@@ -21,11 +29,14 @@ export function getMaterialsTabHTML() {
                         <option value="category">${t('sort_category')}</option>
                     </select>
                 </div>
+                
+                <!-- کانتینر اسکرول لیست -->
                 <div id="materials-container" class="flex-1 overflow-y-auto p-3 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 custom-scrollbar content-start"></div>
             </div>
         </div>
-        <!-- ستون فرم -->
-        <div class="w-full lg:w-1/3 order-2 lg:order-1 h-fit lg:h-full flex flex-col overflow-hidden shrink-0">
+
+        <!-- ستون فرم مدیریت (در موبایل پایین نمایش داده می‌شود) -->
+        <div class="w-full lg:w-1/3 order-2 lg:order-1 h-fit lg:h-full flex flex-col shrink-0 mb-4 lg:mb-0">
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 h-full overflow-y-auto custom-scrollbar">
                     <h3 class="font-bold text-slate-700 mb-3 text-sm border-b pb-2 flex items-center gap-2 sticky top-0 bg-white z-10"><span class="bg-emerald-100 text-emerald-600 p-1 rounded">✏️</span> ${t('manage_material')}</h3>
                     <form id="material-form" class="space-y-3 pb-4">
@@ -40,7 +51,6 @@ export function getMaterialsTabHTML() {
                             <select id="mat-base-unit-select" class="input-field text-xs bg-slate-50 flex-grow font-bold border-none shadow-none p-0 h-6"></select>
                         </div>
                         <div id="unit-relations-container" class="space-y-1.5 mb-2"></div>
-                        <!-- ID این دکمه حیاتی است -->
                         <button type="button" id="btn-add-relation" class="text-[10px] text-slate-500 bg-white hover:bg-slate-100 px-2 py-2 rounded border border-slate-200 w-full border-dashed transition-colors">${t('add_unit_relation')}</button>
                     </div>
                     <div class="bg-teal-50 p-3 rounded-xl border border-teal-100">
