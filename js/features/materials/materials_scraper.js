@@ -71,7 +71,8 @@ function setupBulkScraperButton(refreshCallback) {
                         const newPrice = result.data.final_price;
                         
                         // 4. ذخیره در دیتابیس (آپدیت کالا + ثبت تاریخچه)
-                        await Promise.all([
+                        // تغییر مهم: دریافت خروجی آپدیت برای داشتن تاریخ بروزرسانی جدید
+                        const [updatedDoc] = await Promise.all([
                             api.update(APPWRITE_CONFIG.COLS.MATS, item.$id, { price: newPrice }),
                             api.create(APPWRITE_CONFIG.COLS.HISTORY, {
                                 material_id: item.$id,
@@ -80,8 +81,15 @@ function setupBulkScraperButton(refreshCallback) {
                             })
                         ]);
 
-                        // آپدیت استیت لوکال برای نمایش فوری
-                        item.price = newPrice;
+                        // آپدیت استیت لوکال با داده‌های واقعی سرور (شامل تاریخ بروزرسانی جدید)
+                        // این خط باعث می‌شود تاریخ در UI بلافاصله درست شود
+                        if (updatedDoc) {
+                            Object.assign(item, updatedDoc);
+                        } else {
+                            // حالت Fallback اگر به هر دلیلی داکیومنت برنگشت
+                            item.price = newPrice;
+                            item.$updatedAt = new Date().toISOString();
+                        }
                         
                         report.push({ 
                             status: 'success', 
@@ -107,7 +115,7 @@ function setupBulkScraperButton(refreshCallback) {
 
             // 5. پایان عملیات
             showScraperReport(report);
-            refreshCallback(); // رندر مجدد لیست کالاها
+            refreshCallback(); // رندر مجدد لیست کالاها با داده‌های آپدیت شده
             showToast(`عملیات پایان یافت. ${successCount} موفق، ${failCount} ناموفق.`, 'success');
 
         } catch (globalError) {
