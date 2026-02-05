@@ -58,7 +58,15 @@ export function renderGrid(materials, categories, onDelete, onEdit) {
 
 function createCardHTML(m, categories) {
     const cat = categories.find(c => c.$id === m.category_id)?.name || '-';
-    const taxInfo = m.has_tax ? `<div class="text-[10px] text-rose-500 font-bold">+Tax</div>` : '';
+    
+    // محاسبه قیمت نهایی برای نمایش
+    let displayPrice = m.price || 0;
+    let taxLabel = '';
+
+    if (m.has_tax) {
+        displayPrice = displayPrice * 1.1; // اعمال ۱۰ درصد مالیات
+        taxLabel = `<div class="text-[10px] text-rose-500 font-bold mt-0.5">+ ${t('tax_included')}</div>`;
+    }
     
     const hasLink = m.scraper_url && m.scraper_url.length > 5;
     const linkIcon = hasLink ? `<a href="${m.scraper_url}" target="_blank" class="text-blue-500 hover:text-blue-700 ml-1 text-lg no-underline relative z-20" title="${t('site_link')}" onclick="event.stopPropagation()">🔗</a>` : '';
@@ -82,10 +90,10 @@ function createCardHTML(m, categories) {
              ${getDateBadge(m.$updatedAt)}
              <div class="text-right">
                  <div class="font-bold text-teal-700 text-lg flex items-center justify-end gap-1">
-                    <span>${formatPrice(m.price)}</span>
+                    <span>${formatPrice(displayPrice)}</span>
                     <span class="text-[10px] text-slate-400 font-normal">${t('toman')}</span>
                  </div>
-                 ${taxInfo}
+                 ${taxLabel}
             </div>
         </div>
     </div>`;
