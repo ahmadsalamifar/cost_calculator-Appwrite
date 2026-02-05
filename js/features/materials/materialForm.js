@@ -1,7 +1,7 @@
 // مدیریت فرم ورود اطلاعات مواد
-// اضافه شدن ایمپورت state برای دسترسی به دسته‌بندی‌ها
 import { state } from '../../core/config.js';
 import { formatPrice, parseLocaleNumber } from '../../core/utils.js';
+import { t } from '../../core/i18n.js'; // Import translation
 import * as Units from './materials_units.js';
 
 export function setupFormListeners(onSubmit) {
@@ -14,6 +14,16 @@ export function setupFormListeners(onSubmit) {
     }
     
     document.getElementById('mat-cancel-btn')?.addEventListener('click', resetForm);
+    
+    // --- FIX: اضافه کردن لیسنر برای دکمه تبدیل واحد ---
+    const btnAddRel = document.getElementById('btn-add-relation');
+    if (btnAddRel) {
+        btnAddRel.onclick = () => {
+            Units.addRelationRow();
+        };
+    }
+    // --------------------------------------------------
+
     setupPriceInputFormat();
     setupCurrencyToggle();
 }
@@ -54,7 +64,6 @@ function collectFormData() {
 }
 
 export function populateForm(m) {
-    // --- بروزرسانی لیست دسته‌ها قبل از مقداردهی ---
     updateCategorySelect();
 
     document.getElementById('mat-id').value = m.$id;
@@ -86,7 +95,7 @@ export function populateForm(m) {
     }
 
     document.getElementById('mat-cancel-btn').classList.remove('hidden');
-    document.getElementById('mat-submit-btn').innerText = 'ذخیره تغییرات';
+    document.getElementById('mat-submit-btn').innerText = t('save_material'); // Translated
     
     if(window.innerWidth < 1024) {
         document.getElementById('material-form')?.scrollIntoView({ behavior: 'smooth' });
@@ -94,7 +103,6 @@ export function populateForm(m) {
 }
 
 export function resetForm() {
-    // --- بروزرسانی لیست دسته‌ها برای فرم خام ---
     updateCategorySelect();
 
     document.getElementById('material-form').reset();
@@ -106,16 +114,15 @@ export function resetForm() {
     });
 
     document.getElementById('mat-cancel-btn').classList.add('hidden');
-    document.getElementById('mat-submit-btn').innerText = 'ذخیره کالا';
+    document.getElementById('mat-submit-btn').innerText = t('save_material'); // Translated
     Units.resetUnitData();
 }
 
-// تابع جدید برای پر کردن دراپ‌داون دسته‌بندی
 function updateCategorySelect() {
     const el = document.getElementById('mat-category');
     if (!el) return;
     
-    let html = '<option value="">دسته‌بندی...</option>';
+    let html = `<option value="">${t('category_label')}</option>`; // Translated
     if (state.categories && state.categories.length > 0) {
         html += state.categories.map(c => `<option value="${c.$id}">${c.name}</option>`).join('');
     }

@@ -1,13 +1,14 @@
 import { getHeaderHTML, getTabsHTML } from './header.js';
 import { getMaterialsTabHTML } from './materials.js';
 import { getFormulasTabHTML } from './formulas.js';
-import { getReportsTabHTML } from './reports.js'; // ایمپورت جدید
+import { getReportsTabHTML } from './reports.js'; 
 import { getOtherTabsHTML } from './others.js';
-import { getModalsHTML, getLoadingHTML } from './modals.js';
+import { getModalsHTML, getLoadingHTML, getLanguageModalHTML } from './modals.js'; // Import language modal
 import { openModal } from '../core/utils.js';
 
 export function injectAppLayout() {
     const appHTML = `
+        ${getLanguageModalHTML()} <!-- Language Modal first -->
         ${getLoadingHTML()}
 
         <div id="app-content" class="hidden h-screen flex flex-col overflow-hidden bg-slate-50">
