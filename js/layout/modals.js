@@ -10,24 +10,7 @@ export function getLoadingHTML() {
     `;
 }
 
-export function getLanguageModalHTML() {
-    return `
-    <div id="lang-modal" class="fixed inset-0 bg-slate-900 z-[1000] flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl w-full max-w-sm p-8 text-center shadow-2xl">
-            <div class="text-5xl mb-6">🌍</div>
-            <h2 class="text-xl font-bold mb-8 text-slate-800">${t('select_lang')}</h2>
-            <div class="flex flex-col gap-3">
-                <button id="btn-lang-fa" class="btn bg-teal-600 hover:bg-teal-700 text-white py-3 text-lg shadow-lg">
-                    🇮🇷 فارسی
-                </button>
-                <button id="btn-lang-en" class="btn bg-indigo-600 hover:bg-indigo-700 text-white py-3 text-lg shadow-lg">
-                    🇺🇸 English
-                </button>
-            </div>
-        </div>
-    </div>
-    `;
-}
+// تابع getLanguageModalHTML حذف شد چون دیگر استفاده نمی‌شود.
 
 export function getModalsHTML() {
     return `

@@ -3,6 +3,9 @@ import { state, APPWRITE_CONFIG } from '../../core/config.js';
 import { showToast } from '../../core/utils.js';
 import * as UI from './settingsUI.js';
 
+// گلوبال فانکشن برای تغییر زبان که در main.js تعریف شده را صدا می‌زنیم
+// یا مستقیماً از اینجا رفرش می‌کنیم
+
 export function init(refreshCb) {
     UI.setupForms(
         (name) => addItem(APPWRITE_CONFIG.COLS.CATS, { name }, 'cat-name', refreshCb),
@@ -10,6 +13,13 @@ export function init(refreshCb) {
     );
     
     UI.setupBackupButton(exportData);
+
+    // --- لیسنرهای زبان (جدید) ---
+    const btnFa = document.getElementById('btn-set-lang-fa');
+    if (btnFa) btnFa.onclick = () => window.selectAppLang('fa');
+
+    const btnEn = document.getElementById('btn-set-lang-en');
+    if (btnEn) btnEn.onclick = () => window.selectAppLang('en');
 }
 
 export function renderSettings(refreshCb) {
