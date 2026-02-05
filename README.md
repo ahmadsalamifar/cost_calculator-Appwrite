@@ -1,26 +1,26 @@
 🏭 CostWise
 
-Smart Cost Calculation & Bill of Materials (BOM) System
+Smart Production Management, Cost Calculation & Online Price Inquiry System
 
-CostWise is a powerful, modern web application tailored for manufacturing businesses. It streamlines the process of managing raw materials, defining complex recursive formulas, and calculating real-time production costs with automated price updates.
+CostWise is a powerful, modern web application tailored for manufacturing businesses. It streamlines the process of managing raw materials, defining nested formulas (BOM), and calculating real-time production costs using automated price updates.
 
-Built with performance and simplicity in mind using Vanilla JavaScript, Tailwind CSS, and Appwrite.
+Built with performance and simplicity in mind, using Vanilla JavaScript, Tailwind CSS, and Appwrite.
 
 ✨ Key Features
 
-🌍 Multi-Language Support: Fully localized for English and Persian (Farsi) with RTL support.
+🌍 Multi-Language Support: Fully localized for English (LTR) and Persian (RTL).
 
-📦 Smart Inventory: Manage raw materials with advanced unit conversion (e.g., Buy in Box, consume in Grams).
+📦 Smart Inventory: Manage raw materials with advanced unit conversions (e.g., Buy in Box, Consume in Grams).
 
-🧮 Recursive Formula Engine: Create nested product formulas (Product A inside Product B). The engine automatically detects circular dependencies to prevent errors.
+🧮 Recursive Formula Engine: Create nested product formulas (Product A inside Product B). The engine automatically detects and handles circular dependencies.
 
-🤖 Automated Price Scraper: Integrated Node.js function to scrape real-time prices from online vendors and update cost calculations instantly.
+🤖 Automated Price Scraper: Integrated with cloud functions (Appwrite Functions) to fetch real-time prices from websites like Torob, Emalls, AhanOnline, and WooCommerce stores.
 
 📊 Analytics Dashboard: Visual charts for stock value distribution, category breakdown, and historical price fluctuation analysis.
 
 🖨️ Professional Invoicing: Generate clean, printable production sheets and invoices directly from the browser.
 
-🔔 Toast Notifications: Modern, non-blocking UI notifications for a smooth user experience.
+🔔 Notification System (Toasts): Non-blocking, beautiful UI notifications for status updates.
 
 🛠️ Tech Stack
 
@@ -28,31 +28,51 @@ Component
 
 Technology
 
+Description
+
 Frontend
 
 Vanilla JavaScript (ES Modules)
 
+Bundler-free, fast, and lightweight
+
 Styling
 
-Tailwind CSS (CDN / Utility-first)
+Tailwind CSS
+
+CDN version for rapid development (Utility-first)
 
 Backend
 
-Appwrite (Database, Auth, Functions)
+Appwrite
+
+Database, Auth, and Cloud Functions (Backend-as-a-Service)
+
+Scraper
+
+Node.js (Appwrite Functions)
+
+Runs in an isolated server environment to bypass CORS and handle heavy processing
 
 Charting
 
 Chart.js
 
+Interactive and beautiful charts
+
 Icons
 
-Native Emoji & CSS Shapes
+Native Emoji & CSS
+
+No dependencies on heavy icon libraries
 
 🚀 Getting Started
 
 1. Clone the Repository
 
-git clone [https://github.com/your-username/costwise.git](https://github.com/your-username/costwise.git)
+First, clone the repository:
+
+git clone [https://github.com/ahmadsalamifar/costwise.git](https://github.com/ahmadsalamifar/costwise.git)
 cd costwise
 
 
@@ -60,70 +80,104 @@ cd costwise
 
 To run this project, you need an Appwrite instance (Cloud or Self-hosted).
 
-Create a Database and the following Collections:
+Create a Project and the following Database Collections:
 
-categories (name)
+categories (Fields: name)
 
-units (name)
+units (Fields: name)
 
-materials (name, price, unit_relations, scraper_url, ...)
+materials (Fields: name, price, unit_relations, scraper_url, ...)
 
-formulas (name, components, labor, overhead, profit, is_public)
+formulas (Fields: name, components, labor, overhead, profit, is_public)
 
-price_history (material_id, price, date)
+price_history (Fields: material_id, price, date)
 
-Permissions: Update Row Level Security (RLS) to allow read/write access.
+Note: Set Collection Permissions to Any (or configure based on your needs) to allow read/write access.
 
-3. Frontend Setup
+3. Frontend Configuration
 
 Navigate to js/core/.
-
-Rename config.example.js to config.js.
-
-Fill in your Appwrite credentials:
+Rename config.example.js to config.js and enter your Appwrite credentials:
 
 const APPWRITE_CONFIG = {
     ENDPOINT: '[https://cloud.appwrite.io/v1](https://cloud.appwrite.io/v1)',
     PROJECT_ID: 'YOUR_PROJECT_ID',
     DB_ID: 'YOUR_DATABASE_ID',
-    // ... Update Collection IDs
+    COLS: {
+        CATS: 'categories', // Categories Collection ID
+        MATS: 'materials',  // Materials Collection ID
+        FORMS: 'formulas',  // Formulas Collection ID
+        UNITS: 'units',     // Units Collection ID
+        HISTORY: 'price_history' // History Collection ID
+    },
+    FUNCTIONS: {
+        SCRAPER: 'YOUR_FUNCTION_ID' // Scraper Function ID (Optional)
+    }
 };
 
 
-4. Run Locally
+4. Running the Project
 
-Since this project uses ES Modules, serve it using a local server:
+Since this project uses ES Modules, you must run it on a local server (opening the HTML file directly won't work).
 
 # Using Python
 python3 -m http.server 8000
 
-# Or using VS Code "Live Server" extension
+# Or using "Live Server" extension in VS Code
 
 
-Visit http://localhost:8000.
+Then open http://localhost:8000 in your browser.
 
-📂 Folder Structure
+🤖 Scraper Setup Guide (Server-side)
+
+Note: The scraper code is located in the my-scraper folder. This code is NOT part of the client-side application and must be deployed separately to Appwrite Functions.
+
+Zip the contents of the my-scraper folder or push to a separate git repository.
+
+In the Appwrite Console, under Functions, create a new function with Node.js runtime.
+
+Upload or connect the code.
+
+In the function Settings, set the following Environment Variables:
+
+APPWRITE_API_KEY: An API Key with Database Read/Write access.
+
+APPWRITE_FUNCTION_PROJECT_ID: Your Project ID.
+
+DB_ID: Your Database ID.
+
+After deployment, copy the Function ID and paste it into the application config file (js/core/config.js).
+
+Supported Websites:
+
+✅ Torob
+
+✅ Emalls
+
+✅ AhanOnline
+
+✅ MarkazAhan
+
+✅ Most WooCommerce websites (General)
+
+📂 File Structure
 
 CostWise/
-├── css/                 # Global styles
-├── js/
-│   ├── core/            # Config, API wrapper, Utils, I18n
-│   ├── features/        # Business logic (Materials, Formulas, etc.)
+├── css/                 # Global Styles (UI)
+├── js/                  # Client-side Code (Frontend)
+│   ├── core/            # Config, API Wrapper, Utils, I18n
+│   ├── features/        # Business Logic (Materials, Formulas, Reports)
 │   ├── layout/          # HTML Templates & View Components
-│   └── main.js          # App Entry point
-├── my-scraper/          # Node.js Appwrite Function (Optional)
-└── index.html           # Main HTML
+│   └── main.js          # Entry Point
+├── my-scraper/          # ⚠️ Server-side Code (Appwrite Function) - Must be deployed separately
+└── index.html           # Main HTML File
 
 
-🤖 Price Scraper (Optional)
+👨‍💻 Author
 
-To enable the "Update Prices" feature:
+Ahmad Salamifar
 
-Go to the my-scraper folder.
-
-Deploy the function to Appwrite Functions (Node.js runtime).
-
-Add the Function ID to your js/core/config.js.
+GitHub: github.com/ahmadsalamifar
 
 🤝 Contributing
 

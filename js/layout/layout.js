@@ -20,6 +20,17 @@ export function injectAppLayout() {
                 ${getReportsTabHTML()}
                 ${getOtherTabsHTML()}
             </main>
+
+            <!-- فوتر اضافه شده با نام نویسنده -->
+            <footer class="text-center py-2 text-[10px] text-slate-400 border-t bg-white shrink-0 z-20">
+                <div class="flex items-center justify-center gap-1">
+                    Developed with ❤️ by 
+                    <a href="https://github.com/ahmadsalamifar" target="_blank" class="font-bold text-slate-500 hover:text-teal-600 transition-colors flex items-center gap-1">
+                        Ahmad Salamifar 
+                        <span class="text-lg leading-none">GitHub</span>
+                    </a>
+                </div>
+            </footer>
         </div>
 
         ${getModalsHTML()}

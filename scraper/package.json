@@ -1,0 +1,11 @@
+{
+  "name": "simorgh-scraper",
+  "version": "2.0.0",
+  "main": "main.js",
+  "type": "commonjs",
+  "dependencies": {
+    "node-appwrite": "^11.0.0",
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12"
+  }
+}
