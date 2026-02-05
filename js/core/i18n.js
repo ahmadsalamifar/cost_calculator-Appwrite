@@ -4,7 +4,7 @@ const translations = {
     fa: {
         direction: 'rtl',
         font: 'Vazirmatn',
-        app_name: 'سامانه سیمرغ',
+        app_name: 'CostWise', // نام جدید
         online: 'آنلاین',
         formula_bank: 'بانک فرمول',
         
@@ -50,7 +50,7 @@ const translations = {
     en: {
         direction: 'ltr',
         font: 'sans-serif',
-        app_name: 'Simorgh System',
+        app_name: 'CostWise', // نام جدید
         online: 'Online',
         formula_bank: 'Formula Bank',
         

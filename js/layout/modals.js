@@ -10,8 +10,6 @@ export function getLoadingHTML() {
     `;
 }
 
-// تابع getLanguageModalHTML حذف شد چون دیگر استفاده نمی‌شود.
-
 export function getModalsHTML() {
     return `
     <div id="new-formula-modal" class="modal-overlay hidden">
@@ -25,7 +23,7 @@ export function getModalsHTML() {
     <div id="print-modal" class="modal-overlay hidden z-50">
         <div class="modal-content max-w-4xl h-[90vh] m-4">
              <div class="bg-slate-100 p-4 border-b flex flex-col md:flex-row gap-4 no-print shrink-0">
-                <input type="text" id="print-seller-input" placeholder="نام فروشنده" class="input-field text-xs" value="گروه صنعتی سیمرغ">
+                <input type="text" id="print-seller-input" placeholder="نام فروشنده" class="input-field text-xs" value="CostWise Industries">
                 <input type="text" id="print-buyer-input" placeholder="نام خریدار" class="input-field text-xs">
                 <div class="flex gap-2 mr-auto w-full md:w-auto">
                     <button onclick="window.print()" class="btn btn-primary text-xs px-4 flex-1 md:flex-none" type="button">🖨 چاپ</button>
@@ -34,7 +32,7 @@ export function getModalsHTML() {
             </div>
             <div class="p-4 md:p-12 bg-white text-slate-900 overflow-y-auto h-full" id="print-area">
                 <div class="flex justify-between items-start border-b-2 border-slate-800 pb-6 mb-8">
-                    <div><h1 class="text-xl md:text-2xl font-black text-slate-800" id="print-seller-name">سیمرغ گستر پویا</h1></div>
+                    <div><h1 class="text-xl md:text-2xl font-black text-slate-800" id="print-seller-name">CostWise Industries</h1></div>
                     <div class="text-left"><div class="text-2xl md:text-3xl font-black text-slate-200">INVOICE</div><div class="text-sm font-mono text-slate-500 mt-1"><span id="print-date">---</span></div></div>
                 </div>
                 <div class="bg-slate-50 p-4 rounded border border-slate-200 mb-8 flex justify-between"><div id="print-title" class="font-bold text-lg"></div><div id="print-buyer-name" class="font-bold"></div></div>

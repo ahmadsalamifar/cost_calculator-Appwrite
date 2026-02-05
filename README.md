@@ -1,46 +1,64 @@
-🏗️ Simorgh Cost Calculator (BOM System)
+🏭 CostWise
 
-A professional, web-based Bill of Materials (BOM) & Cost Calculation System designed for manufacturing businesses. It helps you manage raw materials, define complex recursive product formulas, and automatically update costs using a real-time price scraper.
+Smart Cost Calculation & Bill of Materials (BOM) System
 
-Built with Vanilla JavaScript (ES Modules), Tailwind CSS, and Appwrite as the Backend-as-a-Service.
+CostWise is a powerful, modern web application tailored for manufacturing businesses. It streamlines the process of managing raw materials, defining complex recursive formulas, and calculating real-time production costs with automated price updates.
+
+Built with performance and simplicity in mind using Vanilla JavaScript, Tailwind CSS, and Appwrite.
 
 ✨ Key Features
 
-📦 Inventory Management: comprehensive material system supporting multiple units (e.g., Buy in Box, Consume in Gram) with automatic unit conversion.
+🌍 Multi-Language Support: Fully localized for English and Persian (Farsi) with RTL support.
 
-🧮 Recursive Formula Engine: Create nested product formulas (Formula inside Formula). The engine automatically calculates the cost tree, detecting and preventing circular dependencies.
+📦 Smart Inventory: Manage raw materials with advanced unit conversion (e.g., Buy in Box, consume in Grams).
 
-🤖 Automated Price Scraper: Integrated Node.js function to scrape real-time prices from online vendors (Torob, Emalls, WooCommerce) and update your cost calculations instantly.
+🧮 Recursive Formula Engine: Create nested product formulas (Product A inside Product B). The engine automatically detects circular dependencies to prevent errors.
+
+🤖 Automated Price Scraper: Integrated Node.js function to scrape real-time prices from online vendors and update cost calculations instantly.
 
 📊 Analytics Dashboard: Visual charts for stock value distribution, category breakdown, and historical price fluctuation analysis.
 
-🖨️ Invoicing: Generate clean, printable production sheets and invoices.
+🖨️ Professional Invoicing: Generate clean, printable production sheets and invoices directly from the browser.
 
-🔔 Toast Notifications: Modern, non-blocking UI notifications for user actions.
+🔔 Toast Notifications: Modern, non-blocking UI notifications for a smooth user experience.
 
 🛠️ Tech Stack
 
-Frontend: Vanilla JavaScript (ES6 Modules), HTML5
+Component
 
-Styling: Tailwind CSS (CDN/Utility-first)
+Technology
 
-Backend: Appwrite (Database, Auth, Cloud Functions)
+Frontend
 
-Charting: Chart.js
+Vanilla JavaScript (ES Modules)
 
-Icons: Native Emoji & CSS Shapes
+Styling
 
-🚀 Installation & Setup
+Tailwind CSS (CDN / Utility-first)
+
+Backend
+
+Appwrite (Database, Auth, Functions)
+
+Charting
+
+Chart.js
+
+Icons
+
+Native Emoji & CSS Shapes
+
+🚀 Getting Started
 
 1. Clone the Repository
 
-git clone [https://github.com/your-username/simorgh-cost-calculator.git](https://github.com/your-username/simorgh-cost-calculator.git)
-cd simorgh-cost-calculator
+git clone [https://github.com/your-username/costwise.git](https://github.com/your-username/costwise.git)
+cd costwise
 
 
 2. Appwrite Configuration
 
-Create a project on Appwrite Cloud.
+To run this project, you need an Appwrite instance (Cloud or Self-hosted).
 
 Create a Database and the following Collections:
 
@@ -48,53 +66,51 @@ categories (name)
 
 units (name)
 
-materials (name, price, unit_relations, ...)
+materials (name, price, unit_relations, scraper_url, ...)
 
 formulas (name, components, labor, overhead, profit, is_public)
 
 price_history (material_id, price, date)
 
-Important: Update permissions (RLS) for these collections to allow Any (for demo) or Users to read/write.
+Permissions: Update Row Level Security (RLS) to allow read/write access.
 
-3. Frontend Configuration
+3. Frontend Setup
 
 Navigate to js/core/.
 
 Rename config.example.js to config.js.
 
-Open config.js and fill in your Appwrite details:
+Fill in your Appwrite credentials:
 
 const APPWRITE_CONFIG = {
     ENDPOINT: '[https://cloud.appwrite.io/v1](https://cloud.appwrite.io/v1)',
     PROJECT_ID: 'YOUR_PROJECT_ID',
     DB_ID: 'YOUR_DATABASE_ID',
-    // ... ensure collection IDs match yours
+    // ... Update Collection IDs
 };
 
 
-4. Run the Project
+4. Run Locally
 
-Since this project uses ES Modules, you need a local server.
+Since this project uses ES Modules, serve it using a local server:
 
-Using Python:
-
+# Using Python
 python3 -m http.server 8000
 
+# Or using VS Code "Live Server" extension
 
-Using VS Code:
-Install the "Live Server" extension and click "Go Live".
 
-Open http://localhost:8000 in your browser.
+Visit http://localhost:8000.
 
 📂 Folder Structure
 
-.
-├── css/                 # Stylesheets
+CostWise/
+├── css/                 # Global styles
 ├── js/
-│   ├── core/            # Config, API wrapper, Utils, Toast
+│   ├── core/            # Config, API wrapper, Utils, I18n
 │   ├── features/        # Business logic (Materials, Formulas, etc.)
 │   ├── layout/          # HTML Templates & View Components
-│   └── main.js          # Entry point
+│   └── main.js          # App Entry point
 ├── my-scraper/          # Node.js Appwrite Function (Optional)
 └── index.html           # Main HTML
 
@@ -105,7 +121,7 @@ To enable the "Update Prices" feature:
 
 Go to the my-scraper folder.
 
-Deploy this function to Appwrite Functions (Node.js runtime).
+Deploy the function to Appwrite Functions (Node.js runtime).
 
 Add the Function ID to your js/core/config.js.
 
